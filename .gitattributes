@@ -1,0 +1,11 @@
+autocomplete.py export-ignore
+.backup export-ignore
+gentest.py export-ignore
+.git export-ignore
+.gitignore export-ignore
+MSoder_granskning_av_PatrikBogren.txt export-ignore
+.mypy_cache export-ignore
+PremierLeague.spec export-ignore
+__pycache__ export-ignore
+.ropeproject export-ignore
+.gitattributes export-ignore
