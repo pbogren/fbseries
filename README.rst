@@ -1,7 +1,8 @@
 =================================================
+fbseries
 =================================================
-Info: A simple GUI for managing a fotball series table.
-Author: Patrik Bogren
+:Info: A simple GUI for managing a fotball series table.
+:Author: Patrik Bogren
 
 Install:
 ========
