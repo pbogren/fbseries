@@ -2,9 +2,14 @@
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
-from fbseries.model import Table, TeamNotFound
-from fbseries.view import View
-from fbseries.autocomplete import autocomplete
+try:
+    from fbseries.model import Table, TeamNotFound
+    from fbseries.view import View
+    from fbseries.autocomplete import autocomplete
+except ImportError:
+    from .model import Table, TeamNotFound
+    from .view import View
+    from .autocomplete import autocomplete
 
 
 class Controller(tk.Tk):

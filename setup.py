@@ -7,8 +7,8 @@ setup(
     description='A simple gui program for managing a football series table.',
     license='Apache 2.0',
     entry_points={
-        'console_scripts': [
-            'fbseries=fbseries.__main__:main',
+        'gui_scripts': [
+            'fbseries = fbseries.__main__:main',
         ]
     }
 )
