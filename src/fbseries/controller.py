@@ -1,20 +1,17 @@
-"""Controller module"""
+"""Controller module."""
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
-try:
-    from fbseries.model import Table, TeamNotFound
-    from fbseries.view import View
-    from fbseries.autocomplete import autocomplete
-except ImportError:
-    from .model import Table, TeamNotFound
-    from .view import View
-    from .autocomplete import autocomplete
+from fbseries.model import Table, TeamNotFound, filled, is_positive_integer
+from fbseries.view import View
+from fbseries.autocomplete import autocomplete
 
 
 class Controller(tk.Tk):
     """App controller, intermediary between model and the view."""
+
     def __init__(self):
+        """Construct a tk instance from super."""
         tk.Tk.__init__(self)
         self.fname = ""
         self.model = Table()
@@ -37,7 +34,7 @@ class Controller(tk.Tk):
         self.rowconfigure(0, minsize=400, weight=1)
 
     def create_bindings(self):
-        """Creates all the bindings for the widgets."""
+        """Create all the bindings for the widgets."""
         self.view.game_panel.submit_button.bind(
             '<Button-1>', self.submit_game_handler)
         self.view.game_panel.home_team_entry.bind(
@@ -50,7 +47,7 @@ class Controller(tk.Tk):
             '<KeyRelease>', self.team_name_entry_handler)
 
     def run(self):
-        """Starts the main loop."""
+        """Start the main loop."""
         self.title("Premier League")
         self.mainloop()
 
@@ -65,7 +62,7 @@ class Controller(tk.Tk):
 
     # ---------------------------- Handlers ---------------------------------
     def autocomplete_handler(self, event):
-        """A handler for entries with autocomplete.
+        """Handle entries with autocomplete.
 
         Makes sure the input was a character before passing the
         query along to the autocomplete function.
@@ -80,7 +77,7 @@ class Controller(tk.Tk):
             event.widget.insert(tk.END, substring)
 
     def new_button_handler(self):
-        """Handler for the 'new' button in the menupanel."""
+        """Handle 'new' button in the menupanel."""
         fname = asksaveasfilename(title='New', defaultextension='.csv',
                                   filetypes=self.filetypes,
                                   initialfile=self.fname)
@@ -92,7 +89,7 @@ class Controller(tk.Tk):
             self.add_message("Created " + fname)
 
     def open_button_handler(self):
-        """Handler for the 'open' button in the menupanel."""
+        """Handle 'open' button in the menupanel."""
         fname = askopenfilename(title='Open', defaultextension='.csv',
                                 filetypes=self.filetypes,
                                 initialfile=self.fname)
@@ -102,7 +99,7 @@ class Controller(tk.Tk):
             self.add_message("Opened " + fname)
 
     def save_button_handler(self):
-        """Handler for the 'save' button in the menupanel."""
+        """Handle 'save' button in the menupanel."""
         fname = asksaveasfilename(title='Save', defaultextension='.csv',
                                   filetypes=self.filetypes,
                                   initialfile=self.fname)
@@ -112,18 +109,19 @@ class Controller(tk.Tk):
             self.add_message("Saved as " + fname)
 
     def submit_game_handler(self, event):
-        """Inserts stats from a new game into the table."""
+        """Insert stats from a new game into the table."""
         home_team = self.view.game_panel.home_team_text.get()
         away_team = self.view.game_panel.away_team_text.get()
-        home_goals = self.view.game_panel.home_goal_text.get()
-        away_goals = self.view.game_panel.away_goal_text.get()
+        home_goals_str = self.view.game_panel.home_goal_text.get()
+        away_goals_str = self.view.game_panel.away_goal_text.get()
 
-        filled = self.filled([home_team, away_team, home_goals, away_goals])
-        if not filled:
+        all_filled = filled(home_team, away_team,
+                            home_goals_str, away_goals_str)
+        if not all_filled:
             self.add_message("All entries must be filled!")
             return
-        exists = self.exists([home_team, away_team])
-        pos_int = self.is_positive_integer([home_goals, away_goals])
+        exists = self.exists(home_team, away_team)
+        pos_int = is_positive_integer(home_goals_str, away_goals_str)
         if not exists:
             return
         if home_team == away_team:
@@ -132,9 +130,8 @@ class Controller(tk.Tk):
         if not pos_int:
             self.add_message("Data fields must be positive integers!")
             return
-        home_goals = int(home_goals)
-        away_goals = int(away_goals)
-        self.insert_new_game(home_team, away_team, home_goals, away_goals)
+        self.insert_new_game(home_team, away_team,
+                             int(home_goals_str), int(away_goals_str))
         # Empty entry widgets
         self.view.game_panel.home_goal_text.set('')
         self.view.game_panel.away_goal_text.set('')
@@ -142,13 +139,13 @@ class Controller(tk.Tk):
         self.view.game_panel.home_team_text.set('')
 
     def team_name_entry_handler(self, event):
-        """Performs autocomplete for team names in 'edit' mode."""
+        """Perform autocomplete for team names in 'edit' mode."""
         method = self.view.team_panel.insert_method.get()
         if method == 'edit':
             self.autocomplete_handler(event)
 
     def team_panel_handler(self, event):
-        """A handler function for the team panel submit button.
+        """Handle team panel submit button.
 
         Edits or creates a new team in the table.
         """
@@ -163,12 +160,11 @@ class Controller(tk.Tk):
 
         inserted = False
 
-        filled = self.filled([name, won, draw, lost, scored, conceded])
-        if not filled:
+        all_filled = filled(name, won, draw, lost, scored, conceded)
+        if not all_filled:
             self.add_message("All entries must be filled!")
             return
-        pos_int = self.is_positive_integer([
-            won, draw, lost, scored, conceded])
+        pos_int = is_positive_integer(won, draw, lost, scored, conceded)
         if not pos_int:
             self.add_message("Data fields must be positive integers!")
             return
@@ -188,8 +184,7 @@ class Controller(tk.Tk):
             self.view.team_panel.conceded_text.set('')
 
     def new_team(self, name, data):
-        """Inserts a new team into the view. Returns true if
-        successful
+        """Insert a new team into the view. Returns true if successful.
 
         name - A name for the new team.
         data - a tuple of statistics in the form (w,d,l,sc,cc)
@@ -210,8 +205,7 @@ class Controller(tk.Tk):
             return False
 
     def edit_team(self, name, data):
-        """Edits the data of  a team in the view. Returns true if
-        successful
+        """Edit the data of  a team in the view. Returns true if successful.
 
         name - A name for the new team.
         data - A tuple of statistics in the form (w,d,l,sc,cc)
@@ -231,7 +225,8 @@ class Controller(tk.Tk):
             return True
 
     def insert_new_game(self, home_team, away_team, home_goals, away_goals):
-        """Inserts statistics into the table model and update the view.
+        """Insert statistics into the table model and update the view.
+
         Also prints a message to the user confirming successful update.
 
         home_team - The name of the home team (str)
@@ -254,43 +249,20 @@ class Controller(tk.Tk):
         self.add_message(message)
 
     # ---------------------- Field evaluations ------------------------------
-    def filled(self, entry_list):
-        """Returns True if every item in the list is non-empty, False
-        otherwise.
-        """
-        for item in entry_list:
-            if not item:
-                return False
-        return True
+    # TODO move to model
+    def exists(self, *team_names):
+        """Return true if every team name in the list exists in table model.
 
-    def exists(self, name_list):
-        """Returns true if every team name in the list exists in the
-        table model. If team is not found a message with the missing
-        team name will be added and return False.
+        If team is not found a message with the missing team name will be added
+        and return False.
         """
         errors = False
-        for name in name_list:
+        for name in team_names:
             try:
                 self.model.find_team(name)
             except TeamNotFound:
                 self.add_message("".join(["Could not find ", name, "!"]))
                 errors = True
-        return not errors
-
-    def is_positive_integer(self, num_list):
-        """Returns true if every item in num_list is a positive
-        int-convertable string. False otherwise.
-        """
-        errors = False
-        for number in num_list:
-            try:
-                number = int(number)
-            except ValueError:
-                errors = True
-                continue
-            if number < 0:
-                errors = True
-                continue
         return not errors
 
     # ------------------------ View manipulions -----------------------------
@@ -301,10 +273,10 @@ class Controller(tk.Tk):
             self.view.message_panel.insert(m.lstrip())
 
     def update_table_line(self, team):
-        """Updates the table line containing the team.
+        """Update the table line containing the team.
 
-            team - A team instance.
-            """
+        team - A team instance.
+        """
         self.view.table.update_column(
             team.name, 'played', team.games_played)
         self.view.table.update_column(
@@ -327,7 +299,7 @@ class Controller(tk.Tk):
             self.view.table.frame.move(team, '', i)
 
     def new_table_view(self):
-        """Creates a new table in the table panel."""
+        """Create a new table in the table view."""
         table = self.model
         if self.view.table.get_lines():
             self.empty_table_view()
@@ -335,7 +307,7 @@ class Controller(tk.Tk):
             self.insert_team_in_view(team)
 
     def insert_team_in_view(self, team):
-        """Inserts a new line in the table panel.
+        """Insert a new line in the table view.
 
         team - team instance.
         """
@@ -351,7 +323,7 @@ class Controller(tk.Tk):
         self.view.table.insert(values, team.name)
 
     def empty_table_view(self):
-        """Clears the table panel in the view."""
+        """Clear table in view."""
         lines = self.view.table.get_lines()
         for line in lines:
             self.view.table.frame.delete(line)

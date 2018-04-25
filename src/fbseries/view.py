@@ -1,6 +1,7 @@
-""" View module
+"""View module.
 
-References:
+References
+----------
     Table can be displayed in a treeview:
     https://stackoverflow.com/questions/9348264/does-tkinter-have-a-table-widget
 
@@ -14,7 +15,8 @@ from tkinter import ttk
 
 
 class View:
-    """This class is a representation of the widgets in the root window."""
+    """Representation of the widgets in the root window."""
+
     def __init__(self, master):
         """Construct the container window."""
         self.controller = master
@@ -31,7 +33,7 @@ class View:
         self.place_widgets()
 
     def place_widgets(self):
-        """Setup the layout of the view."""
+        """Set up the layout of the view."""
         self.container.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W)
         self.table.frame.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W)
         self.menu_panel.frame.grid(row=1, column=0, sticky=tk.N+tk.S)
@@ -46,16 +48,17 @@ class View:
 
 
 class TablePanel:
-    """A table representation of the data."""
+    """Table representation of the data."""
+
     def __init__(self, master):
-        """Constructs the widgets of the table panel."""
+        """Construct the widgets of the table panel."""
         self.frame = ttk.Treeview(master, columns=(
             'team', 'played', 'won', 'draw', 'lost', 'goals', 'points'))
         self.create_headings()
         self.set_up_columns()
 
     def create_headings(self):
-        """Setup the labels of the panel data."""
+        """Set up the labels of the panel data."""
         self.frame.heading('team', text='Team')
         self.frame.heading('played', text='P')
         self.frame.heading('won', text='W')
@@ -91,8 +94,10 @@ class TablePanel:
 
 
 class MessagePanel:
-    """Constructs the message panel."""
+    """A panel for displaying messages to the user."""
+
     def __init__(self, master):
+        """Construct the message panel."""
         self.frame = ttk.LabelFrame(
             master, height=100, width=400, padding=5, text='Messages')
         self.frame.grid_propagate(0)
@@ -106,7 +111,7 @@ class MessagePanel:
         self.place_widgets()
 
     def place_widgets(self):
-        """Setup the layout of the panel."""
+        """Set up the layout of the panel."""
         self.message_box.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W)
         self.yscroll.grid(row=0, column=1, sticky=tk.N+tk.S)
 
@@ -125,8 +130,10 @@ class MessagePanel:
 
 
 class GamePanel:
+    """A panel for adding stats from a new game."""
+
     def __init__(self, master):
-        """Constructs the game panel."""
+        """Construct the game panel."""
         self.home_team_text = tk.StringVar()
         self.away_team_text = tk.StringVar()
         self.home_goal_text = tk.StringVar()
@@ -154,7 +161,7 @@ class GamePanel:
         self.frame.columnconfigure(2, minsize=30, weight=1)
 
     def place_widgets(self):
-        """Setup the layout of the panel."""
+        """Set up the layout of the panel."""
         self.home_team_label.grid(row=0, column=0)
         self.home_team_entry.grid(row=1, column=0)
         self.away_team_label.grid(row=2, column=0)
@@ -167,8 +174,9 @@ class GamePanel:
 
 class TeamPanel:
     """The panel for adding a team to the table or changing existing team."""
+
     def __init__(self, master):
-        """Construct the panel"""
+        """Construct the panel."""
         self.frame = ttk.Frame(master, width=400, height=100, padding=5,)
         self.master = master
         self.insert_method = tk.StringVar()
@@ -220,7 +228,7 @@ class TeamPanel:
         self.frame.columnconfigure(8, minsize=30, weight=1)
 
     def place_widgets(self):
-        """Setup the layout of the panel."""
+        """Set up the layout of the panel."""
         self.radio_new.grid(row=0, column=0, sticky=tk.W, pady=5)
         self.radio_edit.grid(row=0, column=1, sticky=tk.W, pady=5)
         self.name_label.grid(row=1, column=0, columnspan=2, pady=2)
@@ -241,7 +249,9 @@ class TeamPanel:
 
 class MenuPanel:
     """The panel for new/open/save table."""
+
     def __init__(self, master, controller):
+        """Set up the menu panel."""
         self.frame = ttk.Frame(master, width=400, height=50, padding=5)
         self.master = master
         self.new_button = ttk.Button(self.frame, text='New',
@@ -260,7 +270,7 @@ class MenuPanel:
         self.frame.columnconfigure(2, minsize=130)
 
     def place_widgets(self):
-        """Setup the layout of the panel."""
+        """Set up the layout of the panel."""
         self.new_button.grid(row=0, column=0, padx=15)
         self.open_button.grid(row=0, column=1, padx=15)
         self.save_button.grid(row=0, column=2, padx=15)

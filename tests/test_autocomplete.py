@@ -1,5 +1,3 @@
-import pytest
-
 from fbseries.autocomplete import autocomplete
 
 

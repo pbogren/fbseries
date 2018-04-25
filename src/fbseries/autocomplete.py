@@ -1,10 +1,8 @@
-""" A function for autocompleting"""
+"""A function for autocompleting."""
 
 
 def autocomplete(query, word_list):
-    """ Return least common denominator of strings in word_list
-    beginning with 'query'.
-    """
+    """Find longest common substring of items starting with query."""
     filtered_list = [
         word
         for word

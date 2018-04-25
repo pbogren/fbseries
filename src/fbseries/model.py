@@ -1,9 +1,12 @@
-"""Model for a sport series like table
+"""Model for a sport series like table.
 
-    References:
-        Lambda functions and expression lists (sort using multiple criteria)
-        https://docs.python.org/3.6/reference/expressions.html?highlight=lambda#expression-lists
+References
+----------
+Lambda functions and expression lists (sort using multiple criteria)
+https://docs.python.org/3.6/reference/expressions.html?highlight=lambda#expression-lists
+
 """
+
 import os.path
 
 
@@ -11,15 +14,16 @@ class Team:
     """Represents a team in the series.
 
     A team has a name, and these stats:
-        games_played
-        games_won
-        games_draw
-        games_lost
-        goals(scored, conceded)
-        points"""
+    games_played
+    games_won
+    games_draw
+    games_lost
+    goals(scored, conceded)
+    points
+    """
 
     def __init__(self, name, won=0, draw=0, lost=0, goals=(0, 0)):
-        """Construct a team
+        """Construct a team.
 
         params:
         name - team name
@@ -48,7 +52,7 @@ class Team:
         won = str(self.games_won)
         draw = str(self.games_draw)
         lost = str(self.games_lost)
-        goals = self.goals_to_string()
+        goals = self.goals_to_string().strip()
         points = str(self.points)
         string = (
             self.name.ljust(20)
@@ -62,7 +66,7 @@ class Team:
         return string
 
     def set_values(self, *args):
-        """Sets the team stats to values"""
+        """Set the team stats to values."""
         self.games_won = int(args[0])
         self.games_draw = int(args[1])
         self.games_lost = int(args[2])
@@ -76,7 +80,7 @@ class Team:
             int(self.games_draw)*1])
 
     def goals_to_string(self):
-        """Returns the teams goals as a string.
+        """Return the teams goals as a string.
 
         The sting is in the format 'a-b' where a is scored goals and b
         is conceded goals.
@@ -96,18 +100,18 @@ class Team:
         return self.goals[0] - self.goals[1]
 
     def won(self):
-        """The team won a game."""
+        """Insert game stats from a win."""
         self.games_won += 1
         self.games_played += 1
         self.points += 3
 
     def lost(self):
-        """The team lost a game."""
+        """Insert game stats from a loss."""
         self.games_lost += 1
         self.games_played += 1
 
     def draw(self):
-        """The team played a draw."""
+        """Insert game stats from a draw."""
         self.points += 1
         self.games_draw += 1
         self.games_played += 1
@@ -117,7 +121,7 @@ class Table:
     """Represents a table of the series statistics."""
 
     def __init__(self, fname=None):
-        """Creates a table from file.
+        """Create a table from file.
 
         If a file named 'fname' exists it will be read into a new
         table. If it doesn't exist it will be created. If fname is
@@ -137,7 +141,7 @@ class Table:
             self.use_file(default_fname)
 
     def __str__(self):
-        """Prints the table."""
+        """Print the table."""
         string = (
             "Team".center(20)
             + "Played".center(6)
@@ -153,20 +157,22 @@ class Table:
         return string
 
     def __iter__(self):
+        """Iterate the team_list."""
         return iter(self.team_list)
 
     def __len__(self):
+        """Return length of team_list."""
         return len(self.team_list)
 
     def use_file(self, fname):
-        """Reads from  filename, creates it if not existing."""
+        """Read from  fname, create it if not existing."""
         if os.path.exists(fname):
             self.read_from_file(fname)
         else:
             self.save(fname)
 
     def read_from_file(self, fname):
-        """Creates a new list of teams read from file."""
+        """Create a new list of teams read from file."""
         self.team_list = []  # Empty list at each read
         with open(fname, 'r') as table_file:
             for line in table_file:
@@ -180,13 +186,12 @@ class Table:
                 self.team_list.append(new_team)
 
     def save(self, fname):
-        """Stores the table on disk.
+        """Store the table on disk.
 
         fname - name of the file to store the data.
         """
-        team_list = self.team_list
         with open(fname, 'w') as table_file:
-            for team in team_list:
+            for team in self:
                 line = ([
                     team.name,
                     str(team.games_won),
@@ -196,18 +201,19 @@ class Table:
                 table_file.writelines(",".join(line))
 
     def find_team(self, name):
-        """Returns a team instance with name matching 'name'.
+        """Return a team instance with name matching 'name'.
 
         If no team is found a TeamNotFound exception is raised.
         """
-        for team in self.team_list:
+        for team in self:
             if team.name == name:
-                return team
+                break
         else:
             raise TeamNotFound
+        return team
 
     def list_team_names(self):
-        """A generator of team names
+        """Generate team names.
 
         Can be used for autocompletes etc.
         """
@@ -215,18 +221,18 @@ class Table:
             yield team.name
 
     def new_team(self, name, won=0, draw=0, lost=0, goals=(0, 0)):
-        """Appends a new team in the team list."""
+        """Append a new team in the team list."""
         goals = list(goals)
         new_team = Team(name, won, draw, lost, goals)
         self.team_list.append(new_team)
 
     def sort(self):
-        """Sorts the list of teams based on following criteria
+        """Sorts the list of teams based on criteria.
 
-            1. Points
-            2. Goal difference
-            3. Scored goals
-            4. Alphabetically
+        1. Points
+        2. Goal difference
+        3. Scored goals
+        4. Alphabetically
         """
         self.team_list.sort(key=lambda x: (
             -x.points,
@@ -238,10 +244,10 @@ class Table:
     def insert_statistics(self, home_team, away_team, home_goals, away_goals):
         """Insert stats for a new played game.
 
-            home_team (string) - Name of home team.
-            away_teams (string) - Name of away team.
-            home_goals (int) - Home team scored goals.
-            away_goals (int) - Away team scored goals.
+        home_team (string) - Name of home team.
+        away_teams (string) - Name of away team.
+        home_goals (int) - Home team scored goals.
+        away_goals (int) - Away team scored goals.
         """
         team_1 = self.find_team(home_team)
         team_2 = self.find_team(away_team)
@@ -263,5 +269,30 @@ class Table:
 
 
 class TeamNotFound(Exception):
-    """Exception if no team is found"""
+    """Exception if no team is found."""
+
     pass
+
+
+def filled(*args):
+    """Return True if every item in the list is non-empty."""
+    for item in args:
+        if not str(item).strip():
+            return False
+    return True
+
+
+def is_positive_integer(*values):
+    """Return true if every argument given is int-castable and >= 0."""
+    for value in values:
+        try:
+            value = int(value)
+        except ValueError:
+            # For string literals
+            return False
+        except TypeError:
+            # For lists or other types
+            return False
+        if value < 0:
+            return False
+    return True
