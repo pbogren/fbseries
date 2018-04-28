@@ -1,8 +1,11 @@
 """Controller module."""
+# pylama: ignore=w0511
+# TODO rename field functions -> empty, is_posint
+
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
-from fbseries.model import Table
+from fbseries.model import Table, Team
 from fbseries.view import View
 from fbseries.autocomplete import autocomplete
 
@@ -36,15 +39,25 @@ class Controller(tk.Tk):
     def create_bindings(self):
         """Create all the bindings for the widgets."""
         self.view.game_panel.submit_button.bind(
-            '<Button-1>', self.submit_game_handler)
-        self.view.game_panel.home_team_entry.bind(
-            '<KeyRelease>', self.autocomplete_handler)
-        self.view.game_panel.away_team_entry.bind(
-            '<KeyRelease>', self.autocomplete_handler)
+            '<Button-1>',
+            self.submit_game_handler
+        )
+        self.view.game_panel.hometeam_entry.bind(
+            '<KeyRelease>',
+            self.autocomplete_handler
+        )
+        self.view.game_panel.awayteam_entry.bind(
+            '<KeyRelease>',
+            self.autocomplete_handler
+        )
         self.view.team_panel.submit_button.bind(
-            '<Button-1>', self.team_panel_handler)
+            '<Button-1>',
+            self.team_panel_handler
+        )
         self.view.team_panel.name.bind(
-            '<KeyRelease>', self.team_name_entry_handler)
+            '<KeyRelease>',
+            self.team_name_entry_handler
+        )
 
     def run(self):
         """Start the main loop."""
@@ -54,7 +67,7 @@ class Controller(tk.Tk):
     def read_model_from_file(self, fname):
         """Read and insert a new table in the table panel.
 
-        fname - filename containing the table.
+        fname (str) - filename containing the table.
         """
         self.model = Table(fname)
         self.model.sort()
@@ -70,17 +83,22 @@ class Controller(tk.Tk):
         if not event.char.isprintable():
             return
         query = event.widget.get()
-        name_list = self.model.list_team_names()
+        name_list = self.model.names()
         substring = autocomplete(query, name_list)
         if substring:
             event.widget.delete(0, tk.END)
             event.widget.insert(tk.END, substring)
+        # TODO add if statement to check if event/widhet was edit team and
+        # insert current values in input fields
 
     def new_button_handler(self):
         """Handle 'new' button in the menupanel."""
-        fname = asksaveasfilename(title='New', defaultextension='.csv',
-                                  filetypes=self.filetypes,
-                                  initialfile=self.fname)
+        fname = asksaveasfilename(
+            title='New',
+            defaultextension='.csv',
+            filetypes=self.filetypes,
+            initialfile=self.fname
+        )
         if fname:
             self.fname = fname  # Remember filename
             open(fname, 'w').close()  # create/overwrite
@@ -90,9 +108,12 @@ class Controller(tk.Tk):
 
     def open_button_handler(self):
         """Handle 'open' button in the menupanel."""
-        fname = askopenfilename(title='Open', defaultextension='.csv',
-                                filetypes=self.filetypes,
-                                initialfile=self.fname)
+        fname = askopenfilename(
+            title='Open',
+            defaultextension='.csv',
+            filetypes=self.filetypes,
+            initialfile=self.fname
+        )
         if fname:
             self.fname = fname  # Remember filename
             self.read_model_from_file(fname)
@@ -100,9 +121,12 @@ class Controller(tk.Tk):
 
     def save_button_handler(self):
         """Handle 'save' button in the menupanel."""
-        fname = asksaveasfilename(title='Save', defaultextension='.csv',
-                                  filetypes=self.filetypes,
-                                  initialfile=self.fname)
+        fname = asksaveasfilename(
+            title='Save',
+            defaultextension='.csv',
+            filetypes=self.filetypes,
+            initialfile=self.fname
+        )
         if fname:
             self.fname = fname  # Remember filename
             self.model.save(fname)
@@ -110,33 +134,41 @@ class Controller(tk.Tk):
 
     def submit_game_handler(self, event):
         """Insert stats from a new game into the table."""
-        home_team = self.view.game_panel.home_team_text.get()
-        away_team = self.view.game_panel.away_team_text.get()
-        home_goals_str = self.view.game_panel.home_goal_text.get()
-        away_goals_str = self.view.game_panel.away_goal_text.get()
+        hometeam = self.view.game_panel.hometeam_text.get()
+        awayteam = self.view.game_panel.awayteam_text.get()
+        homegoals_str = self.view.game_panel.homegoal_text.get()
+        awaygoals_str = self.view.game_panel.awaygoal_text.get()
 
-        all_filled = filled(home_team, away_team,
-                            home_goals_str, away_goals_str)
+        all_filled = non_empty(
+            hometeam,
+            awayteam,
+            homegoals_str,
+            awaygoals_str
+        )
         if not all_filled:
             self.add_message("All entries must be filled!")
             return
-        exists = self.exists(home_team, away_team)
-        pos_int = is_positive_integer(home_goals_str, away_goals_str)
+        exists = self.exists(hometeam, awayteam)
+        pos_int = isposint(homegoals_str, awaygoals_str)
         if not exists:
             return
-        if home_team == away_team:
+        if hometeam == awayteam:
             self.add_message("A team can't play against itself!")
             return
         if not pos_int:
             self.add_message("Data fields must be positive integers!")
             return
-        self.insert_new_game(home_team, away_team,
-                             int(home_goals_str), int(away_goals_str))
+        self.insert_new_game(
+            hometeam,
+            awayteam,
+            int(homegoals_str),
+            int(awaygoals_str)
+        )
         # Empty entry widgets
-        self.view.game_panel.home_goal_text.set('')
-        self.view.game_panel.away_goal_text.set('')
-        self.view.game_panel.away_team_text.set('')
-        self.view.game_panel.home_team_text.set('')
+        self.view.game_panel.homegoal_text.set('')
+        self.view.game_panel.awaygoal_text.set('')
+        self.view.game_panel.awayteam_text.set('')
+        self.view.game_panel.hometeam_text.set('')
 
     def team_name_entry_handler(self, event):
         """Perform autocomplete for team names in 'edit' mode."""
@@ -160,11 +192,11 @@ class Controller(tk.Tk):
 
         inserted = False
 
-        all_filled = filled(name, won, draw, lost, scored, conceded)
+        all_filled = non_empty(name, won, draw, lost, scored, conceded)
         if not all_filled:
             self.add_message("All entries must be filled!")
             return
-        pos_int = is_positive_integer(won, draw, lost, scored, conceded)
+        pos_int = isposint(won, draw, lost, scored, conceded)
         if not pos_int:
             self.add_message("Data fields must be positive integers!")
             return
@@ -182,19 +214,21 @@ class Controller(tk.Tk):
             self.view.team_panel.lost_text.set('')
             self.view.team_panel.scored_text.set('')
             self.view.team_panel.conceded_text.set('')
+        else:
+            self.add_message("Something went wrong....")
 
-    def new_team(self, name, data):
+    def new_team(self, name, stats):
         """Insert a new team into the view. Returns true if successful.
 
         name - A name for the new team.
         data - a tuple of statistics in the form (w,d,l,sc,cc)
         """
         try:
-            self.model.find_team(name)
+            self.model.find(name)
         except LookupError:
-            self.model.new_team(name, *data)
+            self.model.add(name, *stats)
             # Get the newly created team
-            team = self.model.find_team(name)
+            team = self.model.find(name)
             self.insert_team_in_view(team)
             self.sort_table_view()
             self.add_message("Created team " + name)
@@ -211,41 +245,52 @@ class Controller(tk.Tk):
         data - A tuple of statistics in the form (w,d,l,sc,cc)
         """
         try:
-            team = self.model.find_team(name)
+            i = self.model.index(name)
         except LookupError:
             self.add_message("No team named " + name)
             return False
         else:
             # Update existing team in model
-            team.set_values(*data)
+            # TODO crate a new team from values and replace the old one in the
+            # model. Requires __index__ in table
+            team = Team(name, *data)
+            self.model[i] = team
             # Update existing view
             self.update_table_line(team)
             self.sort_table_view()
             self.add_message("Edited team" + name)
             return True
 
-    def insert_new_game(self, home_team, away_team, home_goals, away_goals):
+    def insert_new_game(self, hometeam, awayteam, homegoals, awaygoals):
         """Insert statistics into the table model and update the view.
 
         Also prints a message to the user confirming successful update.
 
-        home_team - The name of the home team (str)
-        away_team - The name of the home team (str)
-        home_goals - Number of goals for the home team (int)
-        away_goals - Number of goals for the away team (int)
+        hometeam - The name of the home team (str)
+        awayteam - The name of the home team (str)
+        homegoals - Number of goals for the home team (int)
+        awaygoals - Number of goals for the away team (int)
         """
-        self.model.insert_statistics(
-            home_team, away_team, home_goals, away_goals)
-        for team_name in [home_team, away_team]:
-            team_instance = self.model.find_team(team_name)
+        self.model.game(
+            hometeam,
+            awayteam,
+            homegoals,
+            awaygoals
+        )
+        for team_name in [hometeam, awayteam]:
+            team_instance = self.model.find(team_name)
             self.update_table_line(team_instance)
         self.sort_table_view()
 
         # Alert user of successfull insertion
-        home_goals = str(home_goals)
-        away_goals = str(away_goals)
-        message = ' '.join(["Added game:", home_team, home_goals,
-                            " - ", away_goals, away_team])
+        homegoals = str(homegoals)
+        awaygoals = str(awaygoals)
+        message = ' '.join([
+            "Added game:",
+            hometeam, homegoals,
+            " - ",
+            awaygoals, awayteam
+        ])
         self.add_message(message)
 
     # ---------------------- Field evaluations ------------------------------
@@ -255,10 +300,10 @@ class Controller(tk.Tk):
         If team is not found a message with the missing team name will be added
         and return False.
         """
-        errors = False
+        errors = False  # Since we want to capture all teams not found...
         for name in team_names:
             try:
-                self.model.find_team(name)
+                self.model.find(name)
             except LookupError:
                 self.add_message("".join(["Could not find ", name, "!"]))
                 errors = True
@@ -277,13 +322,13 @@ class Controller(tk.Tk):
         team - A team instance.
         """
         self.view.table.update_column(
-            team.name, 'played', team.games_played)
+            team.name, 'played', team.games)
         self.view.table.update_column(
-            team.name, 'won', team.games_won)
+            team.name, 'won', team.wins)
         self.view.table.update_column(
-            team.name, 'draw', team.games_draw)
+            team.name, 'draw', team.draws)
         self.view.table.update_column(
-            team.name, 'lost', team.games_lost)
+            team.name, 'lost', team.losses)
         self.view.table.update_column(
             team.name, 'goals', team.goals_to_string())
         self.view.table.update_column(
@@ -293,7 +338,7 @@ class Controller(tk.Tk):
         """Sorts the table model and updates the view."""
         self.model.sort()
         # move the team line in view to corresponding index in team_list
-        team_names = self.model.list_team_names()
+        team_names = self.model.names()
         for i, team in enumerate(team_names):
             self.view.table.frame.move(team, '', i)
 
@@ -312,10 +357,10 @@ class Controller(tk.Tk):
         """
         values = (
             team.name,
-            str(team.games_played),
-            str(team.games_won),
-            str(team.games_draw),
-            str(team.games_lost),
+            str(team.games),
+            str(team.wins),
+            str(team.draws),
+            str(team.losses),
             team.goals_to_string(),
             str(team.points),
         )
@@ -328,7 +373,7 @@ class Controller(tk.Tk):
             self.view.table.frame.delete(line)
 
 
-def filled(*args):
+def non_empty(*args):
     """Return True if every item in the list is non-empty."""
     for item in args:
         if not str(item).strip():
@@ -336,7 +381,7 @@ def filled(*args):
     return True
 
 
-def is_positive_integer(*values):
+def isposint(*values):
     """Return true if every argument given is int-castable and >= 0."""
     for value in values:
         try:

@@ -134,22 +134,22 @@ class GamePanel:
 
     def __init__(self, master):
         """Construct the game panel."""
-        self.home_team_text = tk.StringVar()
-        self.away_team_text = tk.StringVar()
-        self.home_goal_text = tk.StringVar()
-        self.away_goal_text = tk.StringVar()
+        self.hometeam_text = tk.StringVar()
+        self.awayteam_text = tk.StringVar()
+        self.homegoal_text = tk.StringVar()
+        self.awaygoal_text = tk.StringVar()
         self.frame = ttk.Frame(master, padding=10, width=400, height=200)
-        self.home_team_label = ttk.Label(self.frame, text="Home team")
-        self.home_team_entry = ttk.Entry(
-            self.frame, textvariable=self.home_team_text, width=20)
-        self.away_team_label = ttk.Label(self.frame, text="Away team")
-        self.away_team_entry = ttk.Entry(
-            self.frame, textvariable=self.away_team_text, width=20)
+        self.hometeam_label = ttk.Label(self.frame, text="Home team")
+        self.hometeam_entry = ttk.Entry(
+            self.frame, textvariable=self.hometeam_text, width=20)
+        self.awayteam_label = ttk.Label(self.frame, text="Away team")
+        self.awayteam_entry = ttk.Entry(
+            self.frame, textvariable=self.awayteam_text, width=20)
         self.goal_label = ttk.Label(self.frame, text="Goals")
-        self.home_goal_entry = ttk.Entry(
-            self.frame, textvariable=self.home_goal_text, width=3)
-        self.away_goal_entry = ttk.Entry(
-            self.frame, textvariable=self.away_goal_text, width=3)
+        self.homegoal_entry = ttk.Entry(
+            self.frame, textvariable=self.homegoal_text, width=3)
+        self.awaygoal_entry = ttk.Entry(
+            self.frame, textvariable=self.awaygoal_text, width=3)
         self.submit_button = ttk.Button(self.frame, text="Submit")
         self.configure_rc()
         self.place_widgets()
@@ -162,13 +162,13 @@ class GamePanel:
 
     def place_widgets(self):
         """Set up the layout of the panel."""
-        self.home_team_label.grid(row=0, column=0)
-        self.home_team_entry.grid(row=1, column=0)
-        self.away_team_label.grid(row=2, column=0)
-        self.away_team_entry.grid(row=3, column=0)
+        self.hometeam_label.grid(row=0, column=0)
+        self.hometeam_entry.grid(row=1, column=0)
+        self.awayteam_label.grid(row=2, column=0)
+        self.awayteam_entry.grid(row=3, column=0)
         self.goal_label.grid(row=0, column=1)
-        self.home_goal_entry.grid(row=1, column=1)
-        self.away_goal_entry.grid(row=3, column=1)
+        self.homegoal_entry.grid(row=1, column=1)
+        self.awaygoal_entry.grid(row=3, column=1)
         self.submit_button.grid(row=3, column=2, sticky=tk.E, padx=15)
 
 

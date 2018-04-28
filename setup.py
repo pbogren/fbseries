@@ -14,6 +14,7 @@ setup(
     license='Apache 2.0',
     packages=find_packages('src'),
     package_dir={'': 'src'},
+    python_requires=">=3.6",
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     entry_points={
         'gui_scripts': [
