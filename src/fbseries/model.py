@@ -23,7 +23,7 @@ class Team:
     """
 
     def __init__(self, name, won=0, draw=0, lost=0, goals=(0, 0)):
-        """Construct a team.
+        """Create a team instance.
 
         params:
         name - team name
@@ -135,10 +135,11 @@ class Table:
         """
         self.team_list = []
         default_fname = './table.csv'
-        if fname is not None:
-            self.use_file(fname)
+        if fname is None:
+            self.fname = default_fname
         else:
-            self.use_file(default_fname)
+            self.fname = fname
+            self.read_from_file(fname)
 
     def __str__(self):
         """Print the table."""
@@ -164,13 +165,6 @@ class Table:
         """Return length of team_list."""
         return len(self.team_list)
 
-    def use_file(self, fname):
-        """Read from  fname, create it if not existing."""
-        if os.path.exists(fname):
-            self.read_from_file(fname)
-        else:
-            self.save(fname)
-
     def read_from_file(self, fname):
         """Create a new list of teams read from file."""
         self.team_list = []  # Empty list at each read
@@ -185,11 +179,14 @@ class Table:
                 new_team = Team(name, won, draw, lost, goals)
                 self.team_list.append(new_team)
 
-    def save(self, fname):
+    def save(self, fname=None):
         """Store the table on disk.
 
         fname - name of the file to store the data.
         """
+        if fname is None:
+            fname = self.fname
+
         with open(fname, 'w') as table_file:
             for team in self:
                 line = ([
@@ -209,7 +206,7 @@ class Table:
             if team.name == name:
                 break
         else:
-            raise TeamNotFound
+            raise LookupError
         return team
 
     def list_team_names(self):
@@ -266,33 +263,3 @@ class Table:
         team_1.add_conceded_goals(away_goals)
         team_2.add_scored_goals(away_goals)
         team_2.add_conceded_goals(home_goals)
-
-
-class TeamNotFound(Exception):
-    """Exception if no team is found."""
-
-    pass
-
-
-def filled(*args):
-    """Return True if every item in the list is non-empty."""
-    for item in args:
-        if not str(item).strip():
-            return False
-    return True
-
-
-def is_positive_integer(*values):
-    """Return true if every argument given is int-castable and >= 0."""
-    for value in values:
-        try:
-            value = int(value)
-        except ValueError:
-            # For string literals
-            return False
-        except TypeError:
-            # For lists or other types
-            return False
-        if value < 0:
-            return False
-    return True

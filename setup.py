@@ -17,7 +17,7 @@ setup(
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     entry_points={
         'gui_scripts': [
-            'fbseries = src.fbseries.__main__:main',
+            'fbseries = fbseries.__main__:main',
         ]
     }
 )

@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
-from fbseries.model import Table, TeamNotFound, filled, is_positive_integer
+from fbseries.model import Table
 from fbseries.view import View
 from fbseries.autocomplete import autocomplete
 
@@ -191,7 +191,7 @@ class Controller(tk.Tk):
         """
         try:
             self.model.find_team(name)
-        except TeamNotFound:
+        except LookupError:
             self.model.new_team(name, *data)
             # Get the newly created team
             team = self.model.find_team(name)
@@ -212,7 +212,7 @@ class Controller(tk.Tk):
         """
         try:
             team = self.model.find_team(name)
-        except TeamNotFound:
+        except LookupError:
             self.add_message("No team named " + name)
             return False
         else:
@@ -249,7 +249,6 @@ class Controller(tk.Tk):
         self.add_message(message)
 
     # ---------------------- Field evaluations ------------------------------
-    # TODO move to model
     def exists(self, *team_names):
         """Return true if every team name in the list exists in table model.
 
@@ -260,7 +259,7 @@ class Controller(tk.Tk):
         for name in team_names:
             try:
                 self.model.find_team(name)
-            except TeamNotFound:
+            except LookupError:
                 self.add_message("".join(["Could not find ", name, "!"]))
                 errors = True
         return not errors
@@ -327,3 +326,27 @@ class Controller(tk.Tk):
         lines = self.view.table.get_lines()
         for line in lines:
             self.view.table.frame.delete(line)
+
+
+def filled(*args):
+    """Return True if every item in the list is non-empty."""
+    for item in args:
+        if not str(item).strip():
+            return False
+    return True
+
+
+def is_positive_integer(*values):
+    """Return true if every argument given is int-castable and >= 0."""
+    for value in values:
+        try:
+            value = int(value)
+        except ValueError:
+            # For string literals
+            return False
+        except TypeError:
+            # For lists or other types
+            return False
+        if value < 0:
+            return False
+    return True

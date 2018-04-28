@@ -7,7 +7,8 @@ import os
 import tempfile
 import pytest
 
-from fbseries.model import Table, TeamNotFound, filled, is_positive_integer
+from fbseries.model import Table
+from fbseries.controller import filled, is_positive_integer
 
 
 @pytest.fixture
@@ -72,6 +73,7 @@ def test_print_table(et):
 def test_create_new_csv():
     """Test that a new table.csv file is created."""
     table = Table()
+    table.save()
     fname = "./table.csv"
     assert os.path.isfile(fname)
     os.remove(fname)
@@ -90,7 +92,7 @@ def test_find_team(et):
 def test_find_team_throws_exception(et):
     """Test that an excepton is found if team is not found."""
     et.new_team('Arsenal')
-    with pytest.raises(TeamNotFound, message="Expected TeamNotFoundException"):
+    with pytest.raises(LookupError, message="Expected LookupError"):
         et.find_team('wrong name')
 
 
@@ -115,8 +117,8 @@ def test_pos_int():
         assert not is_positive_integer(value)
 
 
-def test_sort_goals(tf):
-    """Test points have highest sort priority"""
+def test_sort_points(tf):
+    """Test points have highest sort priority."""
     table = Table(tf.name)
     table.new_team('Arsenal', 1, 0, 1, (2, 1))
     table.new_team('Arsenal2', 1, 1, 1, (0, 0))
@@ -126,7 +128,7 @@ def test_sort_goals(tf):
 
 
 def test_sort_goal_diff(tf):
-    """Test same points sorts on goal-diff"""
+    """Test same points sorts on goal-diff."""
     table = Table(tf.name)
     table.new_team('Blackpool', 1, 1, 1, (5, 4))
     table.new_team('Blackpool2', 1, 1, 1, (4, 2))
@@ -136,7 +138,7 @@ def test_sort_goal_diff(tf):
 
 
 def test_sort_goals(tf):
-    """Test same points and goal-diff sorts on goals"""
+    """Test same points and goal-diff sorts on goals."""
     table = Table(tf.name)
     table.new_team('Chelsea', 2, 2, 2, (3, 1))
     table.new_team('Chelsea2', 2, 2, 2, (4, 2))
