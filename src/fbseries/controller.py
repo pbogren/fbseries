@@ -6,7 +6,7 @@ from tkinter import messagebox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from fbseries.model import Table, Team, game
-from fbseries.view import View, TeamPanel
+from fbseries.view import View
 from fbseries.autocomplete import autocomplete
 
 

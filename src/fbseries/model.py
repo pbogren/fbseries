@@ -123,7 +123,7 @@ class Table:
         """
         self.Type = Type
         self.rows = []
-        self.header = HEADER
+        self.header = header
         default_fname = './table.csv'
         if fname is None:
             self.fname = default_fname
@@ -207,7 +207,7 @@ class Table:
         return item
 
     def index(self, name):
-        """Return index, team_instance with name."""
+        """Return position for item with name."""
         for i, item in enumerate(self):
             if item.name == name:
                 break
