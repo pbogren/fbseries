@@ -1,12 +1,12 @@
-"""model for a sport series like table.
+"""Model for a sport series like table.
 
-references
+References
 ----------
 lambda functions and expression lists (sort using multiple criteria)
 https://docs.python.org/3.6/reference/expressions.html?highlight=lambda#expression-lists
 
 """
-# pylama: ignore=w0511,f0002
+# pylama: ignore=w0511
 HEADER = " ".join([
     f"{'Team':^20}",
     f"{'Played':^6}",
@@ -39,48 +39,32 @@ class Team:
         self.losses = 0
         self.scored = 0
         self.conceded = 0
-        self.games = 0
-        self.points = 0
 
         if len(args) == 1:
             self.name = args[0]
-        elif len(args) in [6, 8]:
-            name, wins, draws, losses, scored, conceded, *rest = args
+        elif len(args) == 6:
+            name, wins, draws, losses, scored, conceded = args
             self.name = name
             self.wins = int(wins)
             self.draws = int(draws)
             self.losses = int(losses)
             self.scored = int(scored)
             self.conceded = int(conceded)
-
-            if len(rest):
-                self.games = rest[0]
-                self.points = rest[1]
-            else:
-                self.games = sum([
-                    self.wins,
-                    self.draws,
-                    self.losses
-                ])
-                self.points = sum([
-                    self.wins*3,
-                    self.draws*1
-                ])
         else:
-            raise TypeError("Too many or to few arguments, expected 1, 6 or 8")
+            raise TypeError("Wrong number of arguments. Expected 1 or 6")
 
     def __repr__(self):
         """Return representation of this instance."""
         return (
-            "team({name}, {games}, {wins}, {draws}, {losses}, {goals},"
-            "{points})".format(
+            "Team({name}, {games}, {wins}, {draws}, {losses}, {goals}, {pts})"
+            .format(
                 name=self.name,
                 games=self.games,
                 wins=self.wins,
                 draws=self.draws,
                 losses=self.losses,
-                goals=self.goals_to_str(),
-                points=self.points
+                goals=self.goals_to_string(),
+                pts=self.points
             )
         )
 
@@ -93,7 +77,7 @@ class Team:
             f"{self.wins:^3}",
             f"{self.draws:^5}",
             f"{self.losses:^5}",
-            f"{self.goals_to_string():^5}",
+            f"{goals:^5}",
             f"{self.points:^7}",
         ])
 
@@ -105,26 +89,20 @@ class Team:
         """
         return f"{self.scored}-{self.conceded}"
 
+    @property
+    def games(self):
+        """Return calculated number of games."""
+        return sum([self.wins, self.draws, self.losses])
+
+    @property
+    def points(self):
+        """Return calculated points."""
+        return sum([self.wins * 3, self.draws])
+
+    @property
     def goal_diff(self):
         """Return difference in scored vs succeded goals."""
         return self.scored - self.conceded
-
-    def won(self):
-        """Insert game stats from a win."""
-        self.wins += 1
-        self.games += 1
-        self.points += 3
-
-    def lost(self):
-        """Insert game stats from a loss."""
-        self.losses += 1
-        self.games += 1
-
-    def draw(self):
-        """Insert game stats from a draw."""
-        self.points += 1
-        self.draws += 1
-        self.games += 1
 
 
 class Table:
@@ -143,7 +121,7 @@ class Table:
         Output:
         rows - a list of teams instances.
         """
-        globals()['Type'] = Type
+        self.Type = Type
         self.rows = []
         self.header = HEADER
         default_fname = './table.csv'
@@ -170,17 +148,19 @@ class Table:
 
     def __getitem__(self, index):
         """Return item at index position of table."""
-        if isinstance(index, slice):
-            return Table(jjindex)
         if index >= len(self):
             raise IndexError
         return self.rows[index]
 
     def __setitem__(self, index, item):
-        self.rows[index] = item
+        """Set new item at index."""
+        if index == len(self):
+            self.rows.append(item)
+        else:
+            self.rows[index] = item
 
     def __contains__(self, name):
-        """Return true if table contains item w/ name='name', false otherwise."""
+        """Check existance of item with name=name in table."""
         try:
             self.find(name)
         except LookupError:
@@ -198,7 +178,7 @@ class Table:
         with open(fname, 'r') as table_file:
             for line in table_file:
                 data = line.split(',')
-                new_item = Type(*data)
+                new_item = self.Type(*data)
                 self.rows.append(new_item)
 
     def save(self, fname=None):
@@ -227,7 +207,7 @@ class Table:
         return item
 
     def index(self, name):
-        """Return index, team_instance with name"""
+        """Return index, team_instance with name."""
         for i, item in enumerate(self):
             if item.name == name:
                 break
@@ -245,7 +225,7 @@ class Table:
 
     def add(self, *args):
         """Append a new team in the team list."""
-        new_item = Type(*args)
+        new_item = self.Type(*args)
         self.rows.append(new_item)
 
     def sort(self, key):
@@ -260,8 +240,6 @@ class Table:
 
 
 def game(table, hometeam, awayteam, homegoals, awaygoals):
-    # TODO move this to controller or top-level funcrion. Not a table
-    # function.
     # TODO team instances as arguments?
     """Insert stats for a new played game.
 
@@ -275,16 +253,16 @@ def game(table, hometeam, awayteam, homegoals, awaygoals):
     team_2 = table.find(awayteam)
 
     if homegoals == awaygoals:
-        team_1.draw()
-        team_2.draw()
+        team_1.draws += 1
+        team_2.draws += 1
     elif homegoals > awaygoals:
-        team_1.won()
-        team_2.lost()
+        team_1.wins += 1
+        team_2.losses += 1
     else:
-        team_1.lost()
-        team_2.won()
+        team_1.losses += 1
+        team_2.wins += 1
 
     team_1.scored += homegoals
     team_1.conceded += awaygoals
-    team_1.scored += awaygoals
-    team_1.conceded += homegoals
+    team_2.scored += awaygoals
+    team_2.conceded += homegoals

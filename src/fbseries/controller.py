@@ -12,7 +12,7 @@ from fbseries.autocomplete import autocomplete
 
 def sortf(x):
     """Sort function key."""
-    return (-x.points, -x.goal_diff(), -x.scored, x.name)
+    return (-x.points, -x.goal_diff, -x.scored, x.name)
 
 
 class Controller(tk.Tk):
@@ -193,7 +193,7 @@ class Controller(tk.Tk):
         lost = self.view.team_panel.lost_text.get()
         scored = self.view.team_panel.scored_text.get()
         conceded = self.view.team_panel.conceded_text.get()
-        data = (won, draw, lost, (scored, conceded))
+        data = (won, draw, lost, scored, conceded)
 
         inserted = False
 
@@ -206,9 +206,9 @@ class Controller(tk.Tk):
             self.add_message("Data fields must be positive integers!")
             return
         if method == 'new':
-            inserted = self.new_team(name, data)
+            inserted = self.new_team(name, *data)
         elif method == 'edit':
-            inserted = self.edit_team(name, data)
+            inserted = self.edit_team(name, *data)
         else:
             self.add_message("Choose 'New' or 'Edit'")  # Just in case.
         if inserted:
@@ -222,12 +222,15 @@ class Controller(tk.Tk):
         else:
             self.add_message("Something went wrong....")
 
-    def new_team(self, name, stats):
+    def new_team(self, name, *stats):
         """Insert a new team into the view. Returns true if successful.
 
         name - A name for the new team.
         data - a tuple of statistics in the form (w,d,l,sc,cc)
         """
+        if name is None:
+            self.add_message("Error: Name is None!")
+            return -1
         try:
             self.model.find(name)
         except LookupError:
@@ -236,14 +239,14 @@ class Controller(tk.Tk):
             team = self.model.find(name)
             self.insert_team_in_view(team)
             self.sort_table_view()
-            self.add_message("Created team " + name)
+            self.add_message(f"Created team {name}")
             return True
         else:
             # Duplicate
-            self.add_message("".join([name, " already exists!"]))
+            self.add_message(f"{name} already exists!")
             return False
 
-    def edit_team(self, name, data):
+    def edit_team(self, name, *stats):
         """Edit the data of  a team in the view. Returns true if successful.
 
         name - A name for the new team.
@@ -252,13 +255,13 @@ class Controller(tk.Tk):
         try:
             i = self.model.index(name)
         except LookupError:
-            self.add_message("No team named " + name)
+            self.add_message(f"No team named {name}")
             return False
         else:
             # Update existing team in model
             # TODO crate a new team from values and replace the old one in the
             # model. Requires __index__ in table
-            team = Team(name, *data)
+            team = Team(name, *stats)
             self.model[i] = team
             # Update existing view
             self.update_table_line(team)
@@ -345,8 +348,8 @@ class Controller(tk.Tk):
         self.model.sort(sortf)
         # move the team line in view to corresponding index in team_list
         team_names = self.model.names()
-        for i, team in enumerate(team_names):
-            self.view.table.frame.move(team, '', i)
+        for i, name in enumerate(team_names):
+            self.view.table.frame.move(name, '', i)
 
     def new_table_view(self):
         """Create a new table in the table view."""

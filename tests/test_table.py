@@ -7,13 +7,8 @@ import os
 import tempfile
 import pytest
 
-from fbseries.model import Table, game
-from fbseries.controller import non_empty, isposint
-
-
-def sortf(x):
-    """Sort function key."""
-    return (-x.points, -x.goal_diff(), -x.scored, x.name)
+from fbseries.model import Table, Team, game
+from fbseries.controller import non_empty, isposint, sortf
 
 
 @pytest.fixture
@@ -53,7 +48,7 @@ def test_save_file(tf):
     table.save()
     with open(tf.name) as f:
         string = next(f)
-    assert string == "Arsenal,0,0,0,0,0,0,0\n" and len(table) == 1
+    assert string == "Arsenal,0,0,0,0,0\n" and len(table) == 1
 
 
 def test_save_as_new():
@@ -66,7 +61,7 @@ def test_save_as_new():
     table.save(new.name)
     with open(new.name) as f:
         string = next(f)
-    assert string == "Arsenal,0,0,0,0,0,0,0\n" and len(table) == 1
+    assert string == "Arsenal,0,0,0,0,0\n" and len(table) == 1
 
 
 def test_print_table(et):
@@ -102,6 +97,46 @@ def test_create_new_csv():
     fname = "./table.csv"
     assert os.path.isfile(fname)
     os.remove(fname)
+
+
+def test_add_different_no_arguments(et):
+    """Test possible arguments needed to create an item (Team)."""
+    name = 'Name'
+    stats = (1, 1, 2, 3, 4)
+    points = stats[0] * 3 + stats[1]
+    games = stats[0] + stats[1] + stats[2]
+
+    et.add(name)
+    assert et[0].name == name
+
+    et.add(name, *stats)
+    expected = (name,) + (games,) + stats + (points,)
+    attrs = (
+        et[1].name,
+        et[1].games,
+        et[1].wins,
+        et[1].draws,
+        et[1].losses,
+        et[1].scored,
+        et[1].conceded,
+        et[1].points,
+    )
+    for attr, val in zip(attrs, expected):
+        assert attr == val
+
+    faulty_args = (
+       (name, 1),
+       (name, 1, 1),
+       (name, 1, 1, 1,),
+       (name, 1, 1, 1, 1),
+       (name, 1, 1, 1, 1, 1, 1),
+    )
+    for arg in faulty_args:
+        with pytest.raises(
+            TypeError,
+            message="Expected TypeError if args != 1 or 6"
+        ):
+            et.add(*arg)
 
 
 def test_find_team(et):
@@ -261,3 +296,56 @@ def test_getitem(et):
     assert et[0].name == 'Arsenal'
     with pytest.raises(IndexError, message='Expected IndexError'):
         team = et[1]
+
+
+def test_setitem(et):
+    """Test the setitem function."""
+    team = Team('Name')
+    et[0] = team
+    assert et[0] is team
+
+    team2 = Team('Other')
+    et[0] = team2
+    assert et[0] is team2
+
+
+def test_contains(et):
+    """Test that the table 'contains' function."""
+    oknames = "Liverpool Blackpool Southhampton".split()
+    faulty_names = "Other teams"
+    for name in oknames:
+        et.add(name)
+
+    for name in oknames:
+        assert name in et
+
+    for name in faulty_names:
+        assert name not in et
+
+
+def test_team_repr():
+    """Test the teams repr function."""
+    name = 'name'
+    team = Team(name)
+    expected = f"Team({name}, 0, 0, 0, 0, 0-0, 0)"
+    assert team.__repr__() == expected
+
+    name = 'Liverpool'
+    team = Team(name, 1, 2, 3, 4, 5)
+    expected = f"Team({name}, 6, 1, 2, 3, 4-5, 5)"
+    assert team.__repr__() == expected
+
+
+def test_index(et):
+    """Test the table can return index it items."""
+    oknames = "Liverpool Blackpool Southhampton".split()
+    for i, name in enumerate(oknames):
+        et.add(name)
+        expected = i
+        value = et.index(name)
+        assert value == expected
+
+    faulty_names = "Some other names".split()
+    for name in faulty_names:
+        with pytest.raises(LookupError, message="Expected LookupError"):
+            et.index(name)
