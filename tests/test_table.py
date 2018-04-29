@@ -7,8 +7,13 @@ import os
 import tempfile
 import pytest
 
-from fbseries.model import Table
+from fbseries.model import Table, game
 from fbseries.controller import non_empty, isposint
+
+
+def sortf(x):
+    """Sort function key."""
+    return (-x.points, -x.goal_diff(), -x.scored, x.name)
 
 
 @pytest.fixture
@@ -38,7 +43,7 @@ def test_imported(et):
 def test_open_empty_file(tf):
     """Test an empty file can be opened."""
     table = Table(tf.name)
-    assert not table.team_list
+    assert not table.rows
 
 
 def test_save_file(tf):
@@ -48,7 +53,7 @@ def test_save_file(tf):
     table.save()
     with open(tf.name) as f:
         string = next(f)
-    assert string == "Arsenal,0,0,0,0-0\n" and len(table) == 1
+    assert string == "Arsenal,0,0,0,0,0,0,0\n" and len(table) == 1
 
 
 def test_save_as_new():
@@ -61,7 +66,7 @@ def test_save_as_new():
     table.save(new.name)
     with open(new.name) as f:
         string = next(f)
-    assert string == "Arsenal,0,0,0,0-0\n" and len(table) == 1
+    assert string == "Arsenal,0,0,0,0,0,0,0\n" and len(table) == 1
 
 
 def test_print_table(et):
@@ -147,41 +152,47 @@ def test_pos_int():
 def test_sort_points(tf):
     """Test points have highest sort priority."""
     table = Table(fname=tf.name)
-    table.add('Arsenal', 1, 0, 1, (2, 1))
-    table.add('Arsenal2', 1, 1, 1, (0, 0))
-    table.sort()
-    assert table.team_list[0].name == 'Arsenal2'
-    assert table.team_list[1].name == 'Arsenal'
+    table.add('Arsenal', 1, 0, 1, 2, 1)
+    table.add('Arsenal2', 1, 1, 1, 0, 0)
+    table.sort(sortf)
+    assert table.rows[0].name == 'Arsenal2'
+    assert table.rows[1].name == 'Arsenal'
 
 
 def test_sort_goal_diff(tf):
     """Test same points sorts on goal-diff."""
     table = Table(fname=tf.name)
-    table.add('Blackpool', 1, 1, 1, (5, 4))
-    table.add('Blackpool2', 1, 1, 1, (4, 2))
-    table.sort()
-    assert table.team_list[0].name == 'Blackpool2'
-    assert table.team_list[1].name == 'Blackpool'
+    table.add('Blackpool', 1, 1, 1, 5, 4)
+    table.add('Blackpool2', 1, 1, 1, 4, 2)
+    table.sort(sortf)
+    assert table.rows[0].name == 'Blackpool2'
+    assert table.rows[1].name == 'Blackpool'
+    assert table.find('Blackpool2').wins == 1
+    assert table.find('Blackpool2').draws == 1
+    assert table.find('Blackpool2').losses == 1
+    assert table.find('Blackpool2').games == 3
+    assert table.find('Blackpool2').scored == 4
+    assert table.find('Blackpool2').conceded == 2
 
 
 def test_sort_goals(tf):
     """Test same points and goal-diff sorts on goals."""
     table = Table(fname=tf.name)
-    table.add('Chelsea', 2, 2, 2, (3, 1))
-    table.add('Chelsea2', 2, 2, 2, (4, 2))
-    table.sort()
-    assert table.team_list[0].name == 'Chelsea2'
-    assert table.team_list[1].name == 'Chelsea'
+    table.add('Chelsea', 2, 2, 2, 3, 1)
+    table.add('Chelsea2', 2, 2, 2, 4, 2)
+    table.sort(sortf)
+    assert table.rows[0].name == 'Chelsea2'
+    assert table.rows[1].name == 'Chelsea'
 
 
 def test_sort_name(tf):
     """Test same stats sorts on name."""
     table = Table(fname=tf.name)
-    table.add('Liverpool2', 2, 2, 2, (3, 2))
-    table.add('Liverpool', 2, 2, 2, (3, 2))
-    table.sort()
-    assert table.team_list[0].name == 'Liverpool'
-    assert table.team_list[1].name == 'Liverpool2'
+    table.add('Liverpool2', 2, 2, 2, 3, 2)
+    table.add('Liverpool', 2, 2, 2, 3, 2)
+    table.sort(sortf)
+    assert table.rows[0].name == 'Liverpool'
+    assert table.rows[1].name == 'Liverpool2'
 
 
 def test_win_lose(tf):
@@ -189,7 +200,7 @@ def test_win_lose(tf):
     table = Table(fname=tf.name)
     table.add('Liverpool')
     table.add('Chelsea')
-    table.game('Liverpool', 'Chelsea', 1, 0)
+    game(table, 'Liverpool', 'Chelsea', 1, 0)
     chelsea = table.find('Chelsea')
     liverpool = table.find('Liverpool')
     assert chelsea.games == 1
@@ -209,7 +220,7 @@ def test_lose_win(tf):
     table = Table(fname=tf.name)
     table.add('Liverpool')
     table.add('Chelsea')
-    table.game('Chelsea', 'Liverpool', 0, 1)
+    game(table, 'Chelsea', 'Liverpool', 0, 1)
     chelsea = table.find('Chelsea')
     liverpool = table.find('Liverpool')
     assert liverpool.games == 1
@@ -229,7 +240,7 @@ def test_draw(tf):
     table = Table(fname=tf.name)
     table.add('Liverpool')
     table.add('Chelsea')
-    table.game('Liverpool', 'Chelsea', 1, 1)
+    game(table, 'Liverpool', 'Chelsea', 1, 1)
     chelsea = table.find('Chelsea')
     liverpool = table.find('Liverpool')
     assert chelsea.games == 1

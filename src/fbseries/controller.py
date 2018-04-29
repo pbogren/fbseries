@@ -5,9 +5,14 @@
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
-from fbseries.model import Table, Team
+from fbseries.model import Table, Team, game
 from fbseries.view import View
 from fbseries.autocomplete import autocomplete
+
+
+def sortf(x):
+    """Sort function key."""
+    return (-x.points, -x.goal_diff(), -x.scored, x.name)
 
 
 class Controller(tk.Tk):
@@ -70,7 +75,7 @@ class Controller(tk.Tk):
         fname (str) - filename containing the table.
         """
         self.model = Table(fname)
-        self.model.sort()
+        self.model.sort(key=sortf)
         self.new_table_view()
 
     # ---------------------------- Handlers ---------------------------------
@@ -271,7 +276,8 @@ class Controller(tk.Tk):
         homegoals - Number of goals for the home team (int)
         awaygoals - Number of goals for the away team (int)
         """
-        self.model.game(
+        game(
+            self.model,
             hometeam,
             awayteam,
             homegoals,
@@ -336,7 +342,7 @@ class Controller(tk.Tk):
 
     def sort_table_view(self):
         """Sorts the table model and updates the view."""
-        self.model.sort()
+        self.model.sort(sortf)
         # move the team line in view to corresponding index in team_list
         team_names = self.model.names()
         for i, team in enumerate(team_names):

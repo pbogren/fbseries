@@ -1,18 +1,28 @@
-"""Model for a sport series like table.
+"""model for a sport series like table.
 
-References
+references
 ----------
-Lambda functions and expression lists (sort using multiple criteria)
+lambda functions and expression lists (sort using multiple criteria)
 https://docs.python.org/3.6/reference/expressions.html?highlight=lambda#expression-lists
 
 """
-# pylama: ignore=W0511,F0002
+# pylama: ignore=w0511,f0002
+HEADER = " ".join([
+    f"{'Team':^20}",
+    f"{'Played':^6}",
+    f"{'Wins':^3}",
+    f"{'Draws':^5}",
+    f"{'Losses':^5}",
+    f"{'Goals':^5}",
+    f"{'Pts':^7}",
+    "\n",
+])
 
 
 class Team:
     """Represents a team in the series."""
 
-    def __init__(self, name, wins=0, draws=0, losses=0, goals=(0, 0)):
+    def __init__(self, *args):
         """Create a team instance.
 
         params:
@@ -20,22 +30,44 @@ class Team:
         wins - games won
         draws - games ended in draw
         losses - games lost
-        goals - (scored, conceded)
+        scored - scored goals
+        conceded - conceded goals
         """
-        self.name = name
-        self.wins = wins
-        self.draws = draws
-        self.losses = losses
-        self.goals = [int(g) for g in goals]
-        self.games = sum([
-            int(self.wins),
-            int(self.draws),
-            int(self.losses)
-        ])
-        self.points = sum([
-            int(self.wins)*3,
-            int(self.draws)*1
-        ])
+        self.name = ""
+        self.wins = 0
+        self.draws = 0
+        self.losses = 0
+        self.scored = 0
+        self.conceded = 0
+        self.games = 0
+        self.points = 0
+
+        if len(args) == 1:
+            self.name = args[0]
+        elif len(args) in [6, 8]:
+            name, wins, draws, losses, scored, conceded, *rest = args
+            self.name = name
+            self.wins = int(wins)
+            self.draws = int(draws)
+            self.losses = int(losses)
+            self.scored = int(scored)
+            self.conceded = int(conceded)
+
+            if len(rest):
+                self.games = rest[0]
+                self.points = rest[1]
+            else:
+                self.games = sum([
+                    self.wins,
+                    self.draws,
+                    self.losses
+                ])
+                self.points = sum([
+                    self.wins*3,
+                    self.draws*1
+                ])
+        else:
+            raise TypeError("Too many or to few arguments, expected 1, 6 or 8")
 
     def __repr__(self):
         """Return representation of this instance."""
@@ -47,21 +79,21 @@ class Team:
                 wins=self.wins,
                 draws=self.draws,
                 losses=self.losses,
-                goals=self.goals_to_string(),
+                goals=self.goals_to_str(),
                 points=self.points
             )
         )
 
     def __str__(self):
         """Return the table line for this team as a string."""
-        goals = self.goals_to_string().strip()
+        goals = self.goals_to_string()
         return " ".join([
             f"{self.name:<20}",
             f"{self.games:^6}",
             f"{self.wins:^3}",
             f"{self.draws:^5}",
             f"{self.losses:^5}",
-            f"{goals:^5}",
+            f"{self.goals_to_string():^5}",
             f"{self.points:^7}",
         ])
 
@@ -71,11 +103,11 @@ class Team:
         The sting is in the format 'a-b' where a is scored goals and b
         is conceded goals.
         """
-        return "-".join([str(g) for g in self.goals])
+        return f"{self.scored}-{self.conceded}"
 
     def goal_diff(self):
         """Return difference in scored vs succeded goals."""
-        return self.goals[0] - self.goals[1]
+        return self.scored - self.conceded
 
     def won(self):
         """Insert game stats from a win."""
@@ -98,7 +130,7 @@ class Team:
 class Table:
     """Represents a table of the series statistics."""
 
-    def __init__(self, fname=None):
+    def __init__(self, fname=None, header=HEADER, Type=Team):
         """Create a table from file.
 
         If a file named 'fname' exists it will be read into a new
@@ -109,9 +141,11 @@ class Table:
         fname - filename to be used for storing the table.
 
         Output:
-        team_list - a list of teams instances.
+        rows - a list of teams instances.
         """
-        self.team_list = []
+        globals()['Type'] = Type
+        self.rows = []
+        self.header = HEADER
         default_fname = './table.csv'
         if fname is None:
             self.fname = default_fname
@@ -121,28 +155,18 @@ class Table:
 
     def __str__(self):
         """Print the table."""
-        header = " ".join([
-            f"{'Team':^20}",
-            f"{'Played':^6}",
-            f"{'Wins':^3}",
-            f"{'Draws':^5}",
-            f"{'Losses':^5}",
-            f"{'Goals':^5}",
-            f"{'Pts':^7}",
-            "\n",
-        ])
-        content = "\n".join([str(team) for team in self])
-        return "".join([header, content])
+        content = "\n".join([str(item) for item in self])
+        return "".join([self.header, content])
 
     def __repr__(self):
         """Representation of the table class."""
-        names = ", ".join([f"'{team.name}'" for team in self])
+        names = ", ".join([f"'{item.name}'" for item in self])
         return f"Table({names})"
 
     def __iter__(self):
-        """Iterate the team_list."""
-        for team in self.team_list:
-            yield team
+        """Iterate the rows."""
+        for item in self.rows:
+            yield item
 
     def __getitem__(self, index):
         """Return item at index position of table."""
@@ -150,13 +174,13 @@ class Table:
             return Table(jjindex)
         if index >= len(self):
             raise IndexError
-        return self.team_list[index]
+        return self.rows[index]
 
     def __setitem__(self, index, item):
-        self.team_list[index] = item
+        self.rows[index] = item
 
     def __contains__(self, name):
-        """Return true if table contains team 'name', false otherwise."""
+        """Return true if table contains item w/ name='name', false otherwise."""
         try:
             self.find(name)
         except LookupError:
@@ -165,22 +189,17 @@ class Table:
             return True
 
     def __len__(self):
-        """Return length of team_list."""
-        return len(self.team_list)
+        """Return length of rows."""
+        return len(self.rows)
 
     def read(self, fname):
         """Create a new list of teams read from file."""
-        self.team_list = []  # Empty list at each read
+        self.rows = []  # Empty list at each read
         with open(fname, 'r') as table_file:
             for line in table_file:
                 data = line.split(',')
-                name = data[0]
-                wins = int(data[1])
-                draws = int(data[2])
-                losses = int(data[3])
-                goals = [int(g) for g in data[4].split('-')]
-                new_team = Team(name, wins, draws, losses, goals)
-                self.team_list.append(new_team)
+                new_item = Type(*data)
+                self.rows.append(new_item)
 
     def save(self, fname=None):
         """Store the table on disk.
@@ -190,32 +209,27 @@ class Table:
         if fname is None:
             fname = self.fname
         with open(fname, 'w') as table_file:
-            for team in self:
-                line = [
-                    team.name,
-                    str(team.wins),
-                    str(team.draws),
-                    str(team.losses),
-                    team.goals_to_string(),
-                ]
-                table_file.writelines(",".join(line))
+            for item in self:
+                keys = [k for k in item.__dict__.keys()]
+                attrs = [str(getattr(item, k)) for k in keys]
+                table_file.writelines(",".join(attrs) + "\n")
 
     def find(self, name):
         """Return a team instance with name matching 'name'.
 
         If no team is found a LookupError exception is raised.
         """
-        for team in self:
-            if team.name == name:
+        for item in self:
+            if item.name == name:
                 break
         else:
             raise LookupError
-        return team
+        return item
 
     def index(self, name):
         """Return index, team_instance with name"""
-        for i, team in enumerate(self):
-            if team.name == name:
+        for i, item in enumerate(self):
+            if item.name == name:
                 break
         else:
             raise LookupError
@@ -226,22 +240,15 @@ class Table:
 
         Can be used for autocompletes etc.
         """
-        for team in self:
-            yield team.name
+        for item in self:
+            yield item.name
 
-    def add(self, name, wins=0, draws=0, losses=0, goals=(0, 0)):
+    def add(self, *args):
         """Append a new team in the team list."""
-        goals = list(goals)
-        new_team = Team(
-            name=name,
-            wins=wins,
-            draws=draws,
-            losses=losses,
-            goals=[int(g) for g in goals]
-        )
-        self.team_list.append(new_team)
+        new_item = Type(*args)
+        self.rows.append(new_item)
 
-    def sort(self):
+    def sort(self, key):
         """Sorts the list of teams based on criteria.
 
         1. Points
@@ -249,35 +256,35 @@ class Table:
         3. Scored goals
         4. Alphabetically
         """
-        self.team_list.sort(key=lambda x: (
-            -x.points,
-            -x.goal_diff(),
-            -x.goals[0],
-            x.name
-        ), reverse=False)
+        self.rows.sort(key=key)
 
-    def game(self, hometeam, awayteam, homegoals, awaygoals):
-        """Insert stats for a new played game.
 
-        hometeam (string) - Name of home team.
-        awayteams (string) - Name of away team.
-        homegoals (int) - Home team scored goals.
-        awaygoals (int) - Away team scored goals.
-        """
-        team_1 = self.find(hometeam)
-        team_2 = self.find(awayteam)
+def game(table, hometeam, awayteam, homegoals, awaygoals):
+    # TODO move this to controller or top-level funcrion. Not a table
+    # function.
+    # TODO team instances as arguments?
+    """Insert stats for a new played game.
 
-        if homegoals == awaygoals:
-            team_1.draw()
-            team_2.draw()
-        elif homegoals > awaygoals:
-            team_1.won()
-            team_2.lost()
-        else:
-            team_1.lost()
-            team_2.won()
+    table - table instance where teams are located
+    hometeam (string) - Name of home team.
+    awayteams (string) - Name of away team.
+    homegoals (int) - Home team scored goals.
+    awaygoals (int) - Away team scored goals.
+    """
+    team_1 = table.find(hometeam)
+    team_2 = table.find(awayteam)
 
-        team_1.goals[0] += homegoals
-        team_1.goals[1] += awaygoals
-        team_1.goals[0] += awaygoals
-        team_1.goals[1] += homegoals
+    if homegoals == awaygoals:
+        team_1.draw()
+        team_2.draw()
+    elif homegoals > awaygoals:
+        team_1.won()
+        team_2.lost()
+    else:
+        team_1.lost()
+        team_2.won()
+
+    team_1.scored += homegoals
+    team_1.conceded += awaygoals
+    team_1.scored += awaygoals
+    team_1.conceded += homegoals
