@@ -105,16 +105,17 @@ class MessagePanel:
     def __init__(self, master):
         """Construct the message panel."""
         self.frame = ttk.LabelFrame(
-            master, height=100, width=400, padding=5, text='Messages')
+            master, height=190, width=400, padding=5, text='Messages')
         self.frame.grid_propagate(0)
         self.yscroll = ttk.Scrollbar(self.frame, orient=tk.VERTICAL)
         self.message_box = tk.Listbox(
             self.frame, relief=tk.SUNKEN, state=tk.DISABLED,
-            yscrollcommand=self.yscroll.set, width=45, height=5, bg='white',
+            yscrollcommand=self.yscroll.set, width=45, height=10, bg='white',
             disabledforeground='black')
         self.yscroll['command'] = self.message_box.yview
         self.configure_rc()
         self.place_widgets()
+        self.insert("")
 
     def place_widgets(self):
         """Set up the layout of the panel."""
@@ -130,7 +131,7 @@ class MessagePanel:
     def insert(self, message):
         """Insert the message to the message box."""
         self.message_box.configure(state=tk.NORMAL)
-        self.message_box.insert(tk.END, message)
+        self.message_box.insert(tk.END, f"  {message}")
         self.message_box.see(tk.END)
         self.message_box.configure(state=tk.DISABLED)
 

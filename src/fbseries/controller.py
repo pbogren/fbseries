@@ -280,7 +280,7 @@ class Controller(tk.Tk):
             # Update existing view
             self.update_table_line(team)
             self.sort_table_view()
-            self.add_message("Edited team" + name)
+            self.add_message(f"Edited team {name}")
             return True
 
     def insert_new_game(self, hometeam, awayteam, homegoals, awaygoals):
