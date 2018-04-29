@@ -20,13 +20,19 @@ class View:
     def __init__(self, master):
         """Construct the container window."""
         self.controller = master
-        self.container = ttk.Frame(master, height=400, width=400, padding=5)
+        self.container = ttk.Frame(
+            master,
+            height=400,
+            name="cont",
+            width=400,
+            padding=5
+        )
         self.table = TablePanel(self.container)
         self.menu_panel = MenuPanel(self.container, master)
         self.message_panel = MessagePanel(self.container)
         self.tabframe = ttk.Notebook(self.container)
         self.game_panel = GamePanel(self.tabframe)
-        self.team_panel = TeamPanel(self.tabframe)
+        self.team_panel = TeamPanel(self.tabframe, name="teampanel")
         self.tabframe.add(self.game_panel.frame, text="Game")
         self.tabframe.add(self.team_panel.frame, text="Team")
         self.configure_rc()
@@ -175,9 +181,9 @@ class GamePanel:
 class TeamPanel:
     """The panel for adding a team to the table or changing existing team."""
 
-    def __init__(self, master):
+    def __init__(self, master, **kw):
         """Construct the panel."""
-        self.frame = ttk.Frame(master, width=400, height=100, padding=5,)
+        self.frame = ttk.Frame(master, width=400, height=100, padding=5, **kw)
         self.master = master
         self.insert_method = tk.StringVar()
         self.name_text = tk.StringVar()

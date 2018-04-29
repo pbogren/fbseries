@@ -1,12 +1,12 @@
 """Controller module."""
 # pylama: ignore=w0511
-# TODO rename field functions -> empty, is_posint
 
 import tkinter as tk
+from tkinter import messagebox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from fbseries.model import Table, Team, game
-from fbseries.view import View
+from fbseries.view import View, TeamPanel
 from fbseries.autocomplete import autocomplete
 
 
@@ -21,8 +21,8 @@ class Controller(tk.Tk):
     def __init__(self):
         """Construct a tk instance from super."""
         tk.Tk.__init__(self)
-        self.fname = ""
-        self.model = Table()
+        self.fname = 'example-table.csv'
+        self.model = Table(self.fname)
         self.filetypes = [("csv", "*.csv")]
         self.view = View(self)
         self.create_bindings()
@@ -93,23 +93,39 @@ class Controller(tk.Tk):
         if substring:
             event.widget.delete(0, tk.END)
             event.widget.insert(tk.END, substring)
-        # TODO add if statement to check if event/widhet was edit team and
-        # insert current values in input fields
+
+            if substring in self.model:
+                # Found a match
+                name = substring
+                teampanel = event.widget.master._name == "teampanel"
+                edit = self.view.team_panel.insert_method.get() == "edit"
+                if teampanel and edit:
+                    team = self.model.find(name)
+                    self.view.team_panel.won_text.set(team.wins)
+                    self.view.team_panel.draw_text.set(team.draws)
+                    self.view.team_panel.lost_text.set(team.losses)
+                    self.view.team_panel.scored_text.set(team.scored)
+                    self.view.team_panel.conceded_text.set(team.conceded)
 
     def new_button_handler(self):
         """Handle 'new' button in the menupanel."""
-        fname = asksaveasfilename(
-            title='New',
-            defaultextension='.csv',
-            filetypes=self.filetypes,
-            initialfile=self.fname
-        )
-        if fname:
-            self.fname = fname  # Remember filename
-            open(fname, 'w').close()  # create/overwrite
-            self.model = Table(fname)
+        # fname = asksaveasfilename(
+        #     title='New',
+        #     defaultextension='.csv',
+        #     filetypes=self.filetypes,
+        #     initialfile=self.fname
+        # )
+        # # if fname:
+        #     self.fname = fname  # Remember filename
+        #     open(fname, 'w').close()  # create/overwrite
+        result = messagebox.askokcancel(
+            "Delete",
+            "Are You Sure? \nUnsaved data will be lost!",
+            icon='warning')
+        if result:
+            self.model = Table()
             self.new_table_view()
-            self.add_message("Created " + fname)
+            self.add_message("Created a new table.")
 
     def open_button_handler(self):
         """Handle 'open' button in the menupanel."""
@@ -259,8 +275,6 @@ class Controller(tk.Tk):
             return False
         else:
             # Update existing team in model
-            # TODO crate a new team from values and replace the old one in the
-            # model. Requires __index__ in table
             team = Team(name, *stats)
             self.model[i] = team
             # Update existing view
