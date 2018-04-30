@@ -10,18 +10,14 @@ from fbseries.view import View
 from fbseries.autocomplete import autocomplete
 
 
-def sortf(x):
-    """Sort function key."""
-    return (-x.points, -x.goal_diff, -x.scored, x.name)
-
-
 class Controller(tk.Tk):
     """App controller, intermediary between model and the view."""
 
     def __init__(self):
         """Construct a tk instance from super."""
         tk.Tk.__init__(self)
-        self.fname = 'example-table.csv'
+        # self.fname = 'example-table.csv'
+        self.fname = None
         self.model = Table(self.fname)
         self.filetypes = [("csv", "*.csv")]
         self.view = View(self)
@@ -394,6 +390,12 @@ class Controller(tk.Tk):
         lines = self.view.table.get_lines()
         for line in lines:
             self.view.table.frame.delete(line)
+
+
+
+def sortf(x):
+    """Sort function key."""
+    return (-x.points, -x.goal_diff, -x.scored, x.name)
 
 
 def non_empty(*args):
