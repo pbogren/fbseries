@@ -91,7 +91,6 @@ class Controller(tk.Tk):
             event.widget.insert(tk.END, substring)
 
             if substring in self.model:
-                # Found a match
                 name = substring
                 teampanel = event.widget.master._name == "teampanel"
                 edit = self.view.team_panel.insert_method.get() == "edit"
@@ -349,7 +348,7 @@ class Controller(tk.Tk):
         self.view.table.update_column(
             team.name, 'lost', team.losses)
         self.view.table.update_column(
-            team.name, 'goals', team.goals_to_string())
+            team.name, 'goals', team.goals_as_string())
         self.view.table.update_column(
             team.name, 'points', team.points)
 
@@ -380,7 +379,7 @@ class Controller(tk.Tk):
             str(team.wins),
             str(team.draws),
             str(team.losses),
-            team.goals_to_string(),
+            team.goals_as_string(),
             str(team.points),
         )
         self.view.table.insert(values, team.name)
@@ -390,7 +389,6 @@ class Controller(tk.Tk):
         lines = self.view.table.get_lines()
         for line in lines:
             self.view.table.frame.delete(line)
-
 
 
 def sortf(x):

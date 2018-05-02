@@ -63,14 +63,14 @@ class Team:
                 wins=self.wins,
                 draws=self.draws,
                 losses=self.losses,
-                goals=self.goals_to_string(),
+                goals=self.goals_as_string(),
                 pts=self.points
             )
         )
 
     def __str__(self):
         """Return the table line for this team as a string."""
-        goals = self.goals_to_string()
+        goals = self.goals_as_string()
         return " ".join([
             f"{self.name:<20}",
             f"{self.games:^6}",
@@ -81,7 +81,7 @@ class Team:
             f"{self.points:^7}",
         ])
 
-    def goals_to_string(self):
+    def goals_as_string(self):
         """Return the teams goals as a string.
 
         The sting is in the format 'a-b' where a is scored goals and b

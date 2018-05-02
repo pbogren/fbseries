@@ -6,28 +6,35 @@ def autocomplete(query, word_list):
     filtered_list = [
         word
         for word
-        in word_list
+        in sorted(word_list)
         if word.lower().startswith(query.lower())
     ]
+    print(f"filtered: {filtered_list}")
     # Skip some steps if possible
     if not filtered_list:
         return ""
     if len(filtered_list) == 1:
         return filtered_list[0]
-    # Find least common denominator by comparing each word
-    # in the list to the first word
-    index = len(query)
-    shortest_word = min(map(len, filtered_list))
-    first_word = filtered_list[0]
-    del filtered_list[0]
-    substring = ""
-    done = False
-    while index < shortest_word and not done:
-        letter = first_word[index]
-        for word in filtered_list:
-            if word[index] != letter:  # found all matching letters
-                substring = first_word[:index]
-                done = True
-                break
-        index += 1
+
+    # The first word in the sorted list is the shortest one and the only
+    # possible match for a longest common substring.
+    first_word = filtered_list.pop(0)
+    start = len(query)
+    for index, letter in enumerate(first_word[start:], start=start):
+        if not letter_in_all(index, letter, filtered_list):
+            substring = first_word[:index]
+            break
+    else:
+        # No break -> first_word is a substr of every word in the list::
+        substring = first_word
+
     return substring
+
+
+def letter_in_all(index, letter,  words):
+    """Check if every string in words has letter att position index."""
+    for word in words:
+        if word[index].lower() != letter.lower():
+            return False
+    else:
+        return True
