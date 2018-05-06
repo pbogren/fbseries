@@ -84,8 +84,8 @@ class Controller(tk.Tk):
         if not event.char.isprintable():
             return
         query = event.widget.get()
-        name_list = self.model.names()
-        substring = autocomplete(query, name_list)
+        team_names = [team.name for team in self.model]
+        substring = autocomplete(query, team_names)
         if substring:
             event.widget.delete(0, tk.END)
             event.widget.insert(tk.END, substring)
@@ -264,16 +264,16 @@ class Controller(tk.Tk):
         data - A tuple of statistics in the form (w,d,l,sc,cc)
         """
         try:
-            i = self.model.index(name)
+            self.model.find(name)
         except LookupError:
             self.add_message(f"No team named {name}")
             return False
         else:
             # Update existing team in model
-            team = Team(name, *stats)
-            self.model[i] = team
+            new_team = Team(name, *stats)
+            self.model[name] = new_team
             # Update existing view
-            self.update_table_line(team)
+            self.update_table_line(new_team)
             self.sort_table_view()
             self.add_message(f"Edited team {name}")
             return True
@@ -356,7 +356,7 @@ class Controller(tk.Tk):
         """Sorts the table model and updates the view."""
         self.model.sort(sortf)
         # move the team line in view to corresponding index in team_list
-        team_names = self.model.names()
+        team_names = [team.name for team in self.model]
         for i, name in enumerate(team_names):
             self.view.table.frame.move(name, '', i)
 

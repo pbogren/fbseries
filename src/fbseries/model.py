@@ -22,7 +22,7 @@ HEADER = " ".join([
 class Team:
     """Represents a team in the series."""
 
-    def __init__(self, *args):
+    def __init__(self, name, *args):
         """Create a team instance.
 
         params:
@@ -33,24 +33,21 @@ class Team:
         scored - scored goals
         conceded - conceded goals
         """
-        self.name = ""
+        self.name = name
         self.wins = 0
         self.draws = 0
         self.losses = 0
         self.scored = 0
         self.conceded = 0
 
-        if len(args) == 1:
-            self.name = args[0]
-        elif len(args) == 6:
-            name, wins, draws, losses, scored, conceded = args
-            self.name = name
+        if len(args) == 5:
+            wins, draws, losses, scored, conceded = args
             self.wins = int(wins)
             self.draws = int(draws)
             self.losses = int(losses)
             self.scored = int(scored)
             self.conceded = int(conceded)
-        else:
+        elif len(args) != 0:
             raise TypeError("Wrong number of arguments. Expected 1 or 6")
 
     def __repr__(self):
@@ -106,23 +103,53 @@ class Team:
 
 
 class Table:
-    """Represents a table of the series statistics."""
+    """A container of items that can be represented in a table.
 
-    def __init__(self, fname=None, header=HEADER, Type=Team):
-        """Create a table from file.
+    A table is a basic container for items. Each item must have a 'name'
+    attribute and must be able to be instantiated with a string as the only
+    argument.
 
-        If a file named 'fname' exists it will be read into a new
-        table. If it doesn't exist it will be created. If fname is
-        not given 'table.csv' will be used as filename.
+    A new table can be created without any arguments. To create a table from a
+    previously saved file the name of that file can be given as argument::
+        >>> table = Table()  # Or table = Table('table.csv')
+        >>> table
+
+    New items can be created with just the name as argument, any following
+    arguments will simply be passed on to the __init__ method for the item
+    class.
+        >>> table.add('Name')
+
+    The items in the table can be accessed either by index or by 'name'::
+        >>> table[0].name
+        'Name'
+        >>> table['Name'].name
+        'Name'
+
+    The items can be saved to a .csv file with the data of each item on a
+    separate row with the following format::
+        <name>,<attr1>,<attr2>,...,<attrN>
+    where each attr field is the string represantation of the value of each
+    attribute of the item.
+
+
+    """
+
+    def __init__(self, fname=None, header=HEADER, cls=Team):
+        """Create an empty table or read one from file.
 
         Input:
         fname - filename to be used for storing the table.
+        header - A header for the string representation of the table.
+        cls - The class for the items. When read from file each new item
+                will be an instance of this class
 
         Output:
-        rows - a list of teams instances.
+        rows - a list of cls instances.
         """
-        self.Type = Type
-        self.rows = []
+        if not hasattr(cls(''), 'name'):
+            raise AttributeError("Must have attribute 'name'")
+        self.cls = cls
+        self.rows = list()
         self.header = header
         default_fname = './table.csv'
         if fname is None:
@@ -148,9 +175,14 @@ class Table:
 
     def __getitem__(self, index):
         """Return item at index position of table."""
-        if index >= len(self):
-            raise IndexError
-        return self.rows[index]
+        if isinstance(index, str):
+            rv = self.find(index)
+        elif isinstance(index, int):
+            rv = self.rows[index]
+        else:
+            raise clsError("Index must be string or integer")
+
+        return rv
 
     def __setitem__(self, index, item):
         """Set new item at index."""
@@ -172,13 +204,17 @@ class Table:
         """Return length of rows."""
         return len(self.rows)
 
+    def __bool__(self):
+        """Return true if table is not empty."""
+        return bool(self.rows)
+
     def read(self, fname):
         """Create a new list of teams read from file."""
         self.rows = []  # Empty list at each read
         with open(fname, 'r') as table_file:
             for line in table_file:
                 data = line.split(',')
-                new_item = self.Type(*data)
+                new_item = self.cls(*data)
                 self.rows.append(new_item)
 
     def save(self, fname=None):
@@ -206,7 +242,7 @@ class Table:
             raise LookupError
         return item
 
-    def index(self, name):
+    def _index(self, name):
         """Return position for item with name."""
         for i, item in enumerate(self):
             if item.name == name:
@@ -215,18 +251,13 @@ class Table:
             raise LookupError
         return i
 
-    def names(self):
-        """Generate team names.
-
-        Can be used for autocompletes etc.
-        """
-        for item in self:
-            yield item.name
-
     def add(self, *args):
         """Append a new team in the team list."""
-        new_item = self.Type(*args)
-        self.rows.append(new_item)
+        if len(args) == 1 and type(args[0]) is self.cls:
+            self.rows.append(args[0])
+        else:
+            new_item = self.cls(*args)
+            self.rows.append(new_item)
 
     def sort(self, key):
         """Sorts the list of teams based on criteria.
@@ -240,7 +271,6 @@ class Table:
 
 
 def game(table, hometeam, awayteam, homegoals, awaygoals):
-    # TODO team instances as arguments?
     """Insert stats for a new played game.
 
     table - table instance where teams are located

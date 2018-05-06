@@ -9,7 +9,6 @@ def autocomplete(query, word_list):
         in sorted(word_list)
         if word.lower().startswith(query.lower())
     ]
-    print(f"filtered: {filtered_list}")
     # Skip some steps if possible
     if not filtered_list:
         return ""
@@ -33,8 +32,11 @@ def autocomplete(query, word_list):
 
 def letter_in_all(index, letter,  words):
     """Check if every string in words has letter att position index."""
+    result = False
     for word in words:
         if word[index].lower() != letter.lower():
-            return False
+            result = False
+            break
     else:
-        return True
+        result = True
+    return result
