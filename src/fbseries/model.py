@@ -6,6 +6,9 @@ lambda functions and expression lists (sort using multiple criteria)
 https://docs.python.org/3.6/reference/expressions.html?highlight=lambda#expression-lists
 
 """
+
+from collections import UserList
+
 # pylama: ignore=w0511
 HEADER = " ".join([
     f"{'Team':^20}",
@@ -102,7 +105,7 @@ class Team:
         return self.scored - self.conceded
 
 
-class Table:
+class Table(UserList):
     """A container of items that can be represented in a table.
 
     A table is a basic container for items. Each item must have a 'name'
@@ -134,7 +137,9 @@ class Table:
 
     """
 
-    def __init__(self, fname=None, header=HEADER, cls=Team):
+    default_fname = "./table.csv"
+
+    def __init__(self, data=None, fname=None, header=HEADER, cls=Team):
         """Create an empty table or read one from file.
 
         Input:
@@ -146,16 +151,16 @@ class Table:
         Output:
         rows - a list of cls instances.
         """
+        if data is not None and isinstance(data, list):
+            super().__init__(data)
+        else:
+            super().__init__()
+
         if not hasattr(cls(''), 'name'):
             raise AttributeError("Must have attribute 'name'")
         self.cls = cls
-        self.rows = list()
         self.header = header
-        default_fname = './table.csv'
-        if fname is None:
-            self.fname = default_fname
-        else:
-            self.fname = fname
+        if fname is not None:
             self.read(fname)
 
     def __str__(self):
@@ -170,26 +175,19 @@ class Table:
 
     def __iter__(self):
         """Iterate the rows."""
-        for item in self.rows:
+        for item in self.data:
             yield item
 
     def __getitem__(self, index):
         """Return item at index position of table."""
         if isinstance(index, str):
-            rv = self.find(index)
+            name = index
+            rv = self.find(name)
         elif isinstance(index, int):
-            rv = self.rows[index]
+            rv = self.data[index]
         else:
-            raise clsError("Index must be string or integer")
-
+            raise AttributeError("Index must be string or integer")
         return rv
-
-    def __setitem__(self, index, item):
-        """Set new item at index."""
-        if index == len(self):
-            self.rows.append(item)
-        else:
-            self.rows[index] = item
 
     def __contains__(self, name):
         """Check existance of item with name=name in table."""
@@ -200,22 +198,19 @@ class Table:
         else:
             return True
 
-    def __len__(self):
-        """Return length of rows."""
-        return len(self.rows)
-
     def __bool__(self):
         """Return true if table is not empty."""
-        return bool(self.rows)
+        return bool(self.data)
 
-    def read(self, fname):
-        """Create a new list of teams read from file."""
-        self.rows = []  # Empty list at each read
+    def read(self, fname, new=True):
+        """Read a table from file."""
+        if new:
+            self.data = list()
         with open(fname, 'r') as table_file:
             for line in table_file:
                 data = line.split(',')
                 new_item = self.cls(*data)
-                self.rows.append(new_item)
+                self.data.append(new_item)
 
     def save(self, fname=None):
         """Store the table on disk.
@@ -223,7 +218,7 @@ class Table:
         fname - name of the file to store the data.
         """
         if fname is None:
-            fname = self.fname
+            raise AttributeError("save mothod requires 'fname' argument!")
         with open(fname, 'w') as table_file:
             for item in self:
                 keys = [k for k in item.__dict__.keys()]
@@ -242,22 +237,13 @@ class Table:
             raise LookupError
         return item
 
-    def _index(self, name):
-        """Return position for item with name."""
-        for i, item in enumerate(self):
-            if item.name == name:
-                break
-        else:
-            raise LookupError
-        return i
-
     def add(self, *args):
         """Append a new team in the team list."""
         if len(args) == 1 and type(args[0]) is self.cls:
-            self.rows.append(args[0])
+            self.data.append(args[0])
         else:
             new_item = self.cls(*args)
-            self.rows.append(new_item)
+            self.data.append(new_item)
 
     def sort(self, key):
         """Sorts the list of teams based on criteria.
@@ -267,7 +253,7 @@ class Table:
         3. Scored goals
         4. Alphabetically
         """
-        self.rows.sort(key=key)
+        self.data.sort(key=key)
 
 
 def game(table, hometeam, awayteam, homegoals, awaygoals):

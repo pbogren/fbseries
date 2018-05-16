@@ -8,7 +8,7 @@ import tempfile
 import pytest
 
 from fbseries.model import Table, Team, game
-from fbseries.controller import non_empty, isposint, sortf
+from fbseries.controller import sortf
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def et():
 def table():
     """Run tests with table from example.csv."""
     fname = os.path.realpath('example-table.csv')
-    return Table(fname)
+    return Table(fname=fname)
 
 
 class TestTeam:
@@ -96,22 +96,8 @@ class TestTeam:
 class TestTable:
     """Tests for the Table class."""
 
-    def test_index_int(self, et):
-        """Test the table can return index it items."""
-        oknames = "Liverpool Blackpool Southhampton".split()
-        for i, name in enumerate(oknames):
-            et.add(name)
-            expected = i
-            value = et._index(name)
-            assert value == expected
-
-        faulty_names = "Some other names".split()
-        for name in faulty_names:
-            with pytest.raises(LookupError, message="Expected LookupError"):
-                et._index(name)
-
     def test_index_str(self, et):
-        """Test the table can return index it items."""
+        """Test the table can return item from item.name."""
         oknames = "Liverpool Blackpool Southhampton".split()
         for name in oknames:
             et.add(name)
@@ -122,26 +108,60 @@ class TestTable:
         faulty_names = "Some other names".split()
         for name in faulty_names:
             with pytest.raises(LookupError, message="Expected LookupError"):
-                et._index(name)
+                et[name]
 
     def test_imported(self, et):
         """Test table can be imported and that we can create an instance."""
         assert isinstance(et, Table)
 
+    def test_construct_from_existing(self):
+        """Test a table can be created with data from another table."""
+        first = Table()
+        for name in "1 2 3".split():
+            first.add(str(name))
+        second = Table()
+        for name in "1 2 3".split():
+            second.add(str(name))
+        third = first + second
+        assert len(third) == len(first) + len(second)
+
+    def test_error_on_item_wo_name(self):
+        """The table items must have a name attribute."""
+        class A:
+            def __init__(self, dummy):
+                pass
+        msg = "Expected AttributeError if cls does not have attribute 'name'!"
+        with pytest.raises(AttributeError, message=msg):
+            table = Table(cls=A)
+
+    def test_items_can_be_instance_w_name(self):
+        """The table can contain any class with a name attribute."""
+        class A:
+            def __init__(self, name):
+                self.name = name
+        table = Table(cls=A)
+        assert table is not None
+
     def test_open_empty_file(self, tf):
         """Test an empty file can be opened."""
         table = Table(tf.name)
-        assert table.rows == []
+        assert table.data == []
 
     def test_save_file(self, tf):
         """Test saved file."""
-        table = Table(tf.name)
+        table = Table(fname=tf.name)
         table.add('Arsenal')
-        table.save()
+        table.save(tf.name)
         with open(tf.name) as f:
             result = next(f)
         expected = "Arsenal,0,0,0,0,0\n"
         assert result ==  expected
+
+    def test_save_wo_fname(self, et):
+        """Save method needs a fname argument."""
+        msg = "Save method must require fname argument."
+        with pytest.raises(AttributeError, message=msg):
+            et.save()
 
     def test_save_as_new(self):
         """Test save with new filename."""
@@ -184,9 +204,11 @@ class TestTable:
     def test_create_new_csv(self):
         """Test that a new table.csv file is created when no arg given."""
         try:
+            f = tempfile.NamedTemporaryFile()
+            fname = f.name
+
             table = Table()
-            table.save()
-            fname = "./table.csv"
+            table.save(fname)
             assert os.path.isfile(fname), "Default fname not created"
         finally:
             os.remove(fname)
@@ -275,7 +297,7 @@ class TestTable:
         table.add('Chelsea', 2, 2, 2, 3, 1)
         table.add('Chelsea2', 2, 2, 2, 4, 2)
         table.sort(sortf)
-        assert table.rows[0].name == 'Chelsea2'
+        assert table.data[0].name == 'Chelsea2'
 
     def test_sort_name(self, tf):
         """Test same stats sorts on name."""
@@ -283,7 +305,7 @@ class TestTable:
         table.add('Liverpool2', 2, 2, 2, 3, 2)
         table.add('Liverpool', 2, 2, 2, 3, 2)
         table.sort(sortf)
-        assert table.rows[0].name == 'Liverpool'
+        assert table.data[0].name == 'Liverpool'
 
     def test_lose_win(self, et):
         """Test correct points and goals are inserted in a lose-win game."""
@@ -361,6 +383,16 @@ class TestTable:
         with pytest.raises(IndexError, message='Expected IndexError'):
             team = et[1]
 
+    def test_getitem_must_be_int_or_str(self, table):
+        """The getitem must be given a string or integer as arguments."""
+        msg = "Expected AttributeError if getitem args not int or str."
+        faulty_args = [
+            list(), tuple(), 1.1, dict(),
+        ]
+        for val in faulty_args:
+            with pytest.raises(AttributeError, message=msg):
+                rv = table.__getitem__(val)
+
     def test_contains_oknames(self, et):
         """Test that the table 'contains' function."""
         oknames = "Liverpool Blackpool Southhampton".split()
@@ -375,35 +407,15 @@ class TestTable:
     def test_setitem(self, et):
         """Test the setitem function."""
         team1 = Team('Name')
-        et[0] = team1
+        et.append(team1)
         team2 = Team('Other')
         et[0] = team2
 
         assert et[0] is team2
 
     def test_bool(self, et):
+        """Test the bool method."""
         assert not et
         et.add('New team')
         assert et
-
-def test_non_empty():
-    """Test the non_empty function."""
-    assert not non_empty("")
-    assert not non_empty(' ')
-    assert non_empty('value')
-    assert non_empty('multiple values 1 2 3    ')
-    assert non_empty(1)
-    assert non_empty([1, -2, 3, "", '  ', (1, 2, 3)])
-
-
-def test_pos_int():
-    """Test the positive integer function."""
-    assert isposint(1, 22, '333', 444, 404)
-    assert not isposint(1, -1)
-    invalid = (
-        -1, "", ' ', 'sss', [], (), [0, 0], "-1", (0, 0)
-    )
-    for value in invalid:
-        assert not isposint(value)
-
 

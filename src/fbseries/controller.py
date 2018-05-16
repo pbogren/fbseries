@@ -396,12 +396,18 @@ def sortf(x):
     return (-x.points, -x.goal_diff, -x.scored, x.name)
 
 
-def non_empty(*args):
+def empty(*args):
     """Return True if every item in the list is non-empty."""
     for item in args:
-        if not str(item).strip():
-            return False
-    return True
+        if isinstance(item, (str, int)) :
+            result = not str(item).strip()
+            break
+        elif not item:
+            result = True
+            break
+    else:
+        result = False
+    return result
 
 
 def isposint(*values):
